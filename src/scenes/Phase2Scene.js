@@ -92,7 +92,15 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   create() {
-
+      this.cards = [];
+    this.zones = {};
+    this.answered = 0;
+    this.errors = 0;
+    this.finishing = false;
+    this.finished = false;
+    this.feedback = null;
+    this.draggingCard = null;
+    this.highlightedZone = null;
     GameMetrics.startPhase(2);
 
     this.drawBackground();
@@ -1416,8 +1424,8 @@ export default class Phase2Scene extends Phaser.Scene {
         playerId:
           state.playerId,
 
-        currentPhase:
-          3,
+               currentPhase:
+          state.currentPhase,
 
         score:
           state.score,

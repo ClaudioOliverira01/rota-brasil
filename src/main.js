@@ -16,8 +16,10 @@ import { Phase1Scene } from "./scenes/Phase1Scene.js";
 import Phase2Scene from "./scenes/Phase2Scene.js";
 import { Phase3Scene } from "./scenes/Phase3Scene.js";
 import { Phase4Scene } from "./scenes/Phase4Scene.js";
+import { BonusScene } from "./scenes/BonusScene.js";
 import { VictoryScene } from "./scenes/VictoryScene.js";
 import { RankingScene } from "./scenes/RankingScene.js";
+import { AccessibilityManager } from "./systems/AccessibilityManager.js";
 
 const config = {
   type: Phaser.AUTO,
@@ -89,6 +91,8 @@ const config = {
     Phase3Scene,
 
     Phase4Scene,
+
+    BonusScene,
     
     VictoryScene,
 

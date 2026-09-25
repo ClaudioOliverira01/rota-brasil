@@ -1,11 +1,5 @@
 import Phaser from "phaser";
-
-import {
-  COLORS,
-  GAME_HEIGHT,
-  GAME_WIDTH
-} from "../config/gameConfig.js";
-
+import { COLORS, GAME_HEIGHT, GAME_WIDTH } from "../config/gameConfig.js";
 import { GameState } from "../systems/GameState.js";
 import { GameMetrics } from "../systems/GameMetrics.js";
 import { ProgressManager } from "../systems/ProgressManager.js";
@@ -19,42 +13,32 @@ export class ProfileScene extends Phaser.Scene {
     this.inputElement = null;
     this.resizeHandler = null;
     this.submitting = false;
+    this.choiceObjects = [];
+    this.choiceOverlay = null;
+    this.choiceText = null;
+    this.message = null;
   }
-
-  // =========================================================
-  // CREATE
-  // =========================================================
 
   create() {
     this.drawBackground();
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        95,
-        "QUEM ESTÁ JOGANDO?",
-        {
-          fontFamily: "Arial",
-          fontSize: "42px",
-          fontStyle: "bold",
-          color: "#18332C"
-        }
-      )
-      .setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 95, "QUEM ESTÁ JOGANDO?", {
+      fontFamily: "Arial",
+      fontSize: "42px",
+      fontStyle: "bold",
+      color: "#18332C"
+    }).setOrigin(0.5);
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        145,
-        "Escolha um apelido para guardar sua aventura.",
-        {
-          fontFamily: "Arial",
-          fontSize: "22px",
-          color: "#31564A",
-          align: "center"
-        }
-      )
-      .setOrigin(0.5);
+    this.add.text(
+      GAME_WIDTH / 2,
+      145,
+      "Escolha um apelido para guardar sua aventura.",
+      {
+        fontFamily: "Arial",
+        fontSize: "22px",
+        color: "#31564A"
+      }
+    ).setOrigin(0.5);
 
     this.createInput();
     this.createBackButton();
@@ -64,58 +48,22 @@ export class ProfileScene extends Phaser.Scene {
     );
   }
 
-  // =========================================================
-  // BACKGROUND
-  // =========================================================
-
   drawBackground() {
-    this.cameras.main.setBackgroundColor(
-      COLORS.skyLight
-    );
+    this.cameras.main.setBackgroundColor(COLORS.skyLight);
 
-    const graphics =
-      this.add.graphics();
+    const g = this.add.graphics();
 
-    graphics.fillStyle(
-      COLORS.sky,
-      1
-    );
+    g.fillStyle(COLORS.sky, 1);
+    g.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    graphics.fillRect(
-      0,
-      0,
-      GAME_WIDTH,
-      GAME_HEIGHT
-    );
+    g.fillStyle(COLORS.map, 1);
+    g.fillCircle(80, GAME_HEIGHT - 20, 230);
+    g.fillCircle(GAME_WIDTH - 70, GAME_HEIGHT + 20, 260);
 
-    graphics.fillStyle(
-      COLORS.map,
-      1
-    );
+    g.fillStyle(COLORS.leaf, 1);
 
-    graphics.fillCircle(
-      80,
-      GAME_HEIGHT - 20,
-      230
-    );
-
-    graphics.fillCircle(
-      GAME_WIDTH - 70,
-      GAME_HEIGHT + 20,
-      260
-    );
-
-    graphics.fillStyle(
-      COLORS.leaf,
-      1
-    );
-
-    for (
-      let i = 0;
-      i < 15;
-      i += 1
-    ) {
-      graphics.fillCircle(
+    for (let i = 0; i < 15; i += 1) {
+      g.fillCircle(
         35 + i * 85,
         GAME_HEIGHT - 5,
         38
@@ -123,59 +71,41 @@ export class ProfileScene extends Phaser.Scene {
     }
   }
 
-  // =========================================================
-  // INPUT
-  // =========================================================
-
   createInput() {
-    const input =
-      document.createElement(
-        "input"
-      );
+    const input = document.createElement("input");
 
-    input.id =
-      "profile-nickname-input";
+    input.id = "profile-nickname-input";
+    input.type = "text";
+    input.maxLength = 15;
+    input.placeholder = "Ex.: Aventureiro";
+    input.autocomplete = "off";
+    input.spellcheck = false;
 
-    input.type =
-      "text";
+    Object.assign(input.style, {
+      position: "absolute",
+      width: "430px",
+      height: "58px",
+      padding: "0 20px",
+      fontSize: "24px",
+      fontFamily: "Arial",
+      border: "4px solid #4C8A3A",
+      borderRadius: "20px",
+      outline: "none",
+      textAlign: "center",
+      boxSizing: "border-box",
+      zIndex: "20",
+      background: "white"
+    });
 
-    input.maxLength =
-      15;
+    document.body.appendChild(input);
 
-    input.placeholder =
-      "Ex.: Aventureiro";
-
-    Object.assign(
-      input.style,
-      {
-        position: "absolute",
-        width: "430px",
-        height: "58px",
-        padding: "0 20px",
-        fontSize: "24px",
-        fontFamily: "Arial",
-        border: "4px solid #4C8A3A",
-        borderRadius: "20px",
-        outline: "none",
-        textAlign: "center",
-        boxSizing: "border-box",
-        zIndex: "20",
-        background: "white"
-      }
-    );
-
-    document.body.appendChild(
-      input
-    );
-
-    this.inputElement =
-      input;
+    this.inputElement = input;
 
     this.positionInput();
 
-    this.resizeHandler =
-      () =>
-        this.positionInput();
+    this.resizeHandler = () => {
+      this.positionInput();
+    };
 
     window.addEventListener(
       "resize",
@@ -183,6 +113,12 @@ export class ProfileScene extends Phaser.Scene {
     );
 
     input.focus();
+
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        this.submit();
+      }
+    });
 
     this.events.once(
       "shutdown",
@@ -194,873 +130,717 @@ export class ProfileScene extends Phaser.Scene {
       () => this.removeInput()
     );
 
-    // =======================================================
-    // BOTÃO CONTINUAR
-    // =======================================================
+    const shadow = this.add.rectangle(
+      GAME_WIDTH / 2 + 5,
+      415,
+      350,
+      70,
+      0x000000,
+      0.12
+    );
 
-    const button =
-      this.add
-        .rectangle(
-          GAME_WIDTH / 2,
-          410,
-          350,
-          70,
-          0x4C8A3A
-        )
-        .setStrokeStyle(
-          4,
-          0x315F2A
-        )
-        .setInteractive({
-          useHandCursor: true
-        });
+    const button = this.add.rectangle(
+      GAME_WIDTH / 2,
+      410,
+      350,
+      70,
+      COLORS.forest
+    )
+      .setStrokeStyle(4, 0x315F2A)
+      .setInteractive({
+        useHandCursor: true
+      });
 
-    const label =
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          410,
-          "CONTINUAR ➜",
-          {
-            fontFamily: "Arial",
-            fontSize: "25px",
-            fontStyle: "bold",
-            color: "#FFFFFF"
-          }
-        )
-        .setOrigin(0.5);
-
-    button.on(
-      "pointerover",
-      () => {
-        button.setScale(1.04);
-        label.setScale(1.04);
+    const label = this.add.text(
+      GAME_WIDTH / 2,
+      410,
+      "CONTINUAR ➜",
+      {
+        fontFamily: "Arial",
+        fontSize: "25px",
+        fontStyle: "bold",
+        color: "#FFFFFF"
       }
-    );
+    ).setOrigin(0.5);
 
-    button.on(
-      "pointerout",
-      () => {
-        button.setScale(1);
-        label.setScale(1);
-      }
-    );
+    button.on("pointerover", () => {
+      button.setScale(1.04);
+      label.setScale(1.04);
+      shadow.setScale(1.04);
+    });
 
-    button.on(
-      "pointerdown",
-      () => this.submit()
-    );
+    button.on("pointerout", () => {
+      button.setScale(1);
+      label.setScale(1);
+      shadow.setScale(1);
+    });
 
-    input.addEventListener(
-      "keydown",
-      event => {
-        if (
-          event.key ===
-          "Enter"
-        ) {
-          this.submit();
-        }
-      }
-    );
+    button.on("pointerdown", () => {
+      this.submit();
+    });
   }
 
-  // =========================================================
-  // POSICIONAMENTO DO INPUT
-  // =========================================================
-
   positionInput() {
-    if (
-      !this.inputElement
-    ) {
-      return;
-    }
+    if (!this.inputElement) return;
 
-    const canvas =
-      this.game.canvas.getBoundingClientRect();
+    const canvas = this.game.canvas.getBoundingClientRect();
 
     const scaleX =
-      canvas.width /
-      GAME_WIDTH;
+      canvas.width / GAME_WIDTH;
 
     const scaleY =
-      canvas.height /
-      GAME_HEIGHT;
+      canvas.height / GAME_HEIGHT;
+
+    const scale =
+      Math.min(scaleX, scaleY);
 
     this.inputElement.style.left =
-      `${
-        canvas.left +
-        (
-          GAME_WIDTH / 2 -
-          215
-        ) *
-          scaleX
-      }px`;
+      `${canvas.left + (GAME_WIDTH / 2 - 215) * scaleX}px`;
 
     this.inputElement.style.top =
-      `${
-        canvas.top +
-        225 *
-          scaleY
-      }px`;
+      `${canvas.top + 225 * scaleY}px`;
 
     this.inputElement.style.transform =
-      `scale(${
-        Math.min(
-          scaleX,
-          scaleY
-        )
-      })`;
+      `scale(${scale})`;
 
     this.inputElement.style.transformOrigin =
       "top left";
   }
 
-  // =========================================================
-  // REMOVE INPUT
-  // =========================================================
-
   removeInput() {
-    if (
-      this.inputElement
-    ) {
-      this.inputElement.remove();
+    this.inputElement?.remove();
 
-      this.inputElement =
-        null;
-    }
+    this.inputElement = null;
 
-    if (
-      this.resizeHandler
-    ) {
+    if (this.resizeHandler) {
       window.removeEventListener(
         "resize",
         this.resizeHandler
       );
 
-      this.resizeHandler =
-        null;
+      this.resizeHandler = null;
     }
   }
-
-  // =========================================================
-  // BOTÃO VOLTAR
-  // =========================================================
 
   createBackButton() {
-    const button =
-      this.add
-        .text(
-          85,
-          65,
-          "← VOLTAR",
-          {
-            fontFamily: "Arial",
-            fontSize: "22px",
-            fontStyle: "bold",
-            color: "#18332C",
-            backgroundColor:
-              "#FFFFFF",
-            padding: {
-              x: 18,
-              y: 10
-            }
-          }
-        )
-        .setOrigin(0.5)
-        .setInteractive({
-          useHandCursor: true
-        });
+    const button = this.add.text(
+      85,
+      65,
+      "← VOLTAR",
+      {
+        fontFamily: "Arial",
+        fontSize: "22px",
+        fontStyle: "bold",
+        color: "#18332C",
+        backgroundColor: "#FFFFFF",
+        padding: {
+          x: 18,
+          y: 10
+        }
+      }
+    )
+      .setOrigin(0.5)
+      .setInteractive({
+        useHandCursor: true
+      });
 
-    button.on(
-      "pointerdown",
-      () =>
-        this.scene.start(
-          "MenuScene"
-        )
-    );
+    button.on("pointerdown", () => {
+      this.scene.start("MenuScene");
+    });
   }
 
-  // =========================================================
-  // SUBMIT
-  // =========================================================
-
   async submit() {
-    if (
-      this.submitting
-    ) {
-      return;
-    }
+    if (this.submitting) return;
 
     const nickname =
-      this.inputElement
-        ?.value
-        .trim() || "";
+      this.inputElement?.value.trim() || "";
 
-    const validation =
-      ProgressManager.validateNickname(
-        nickname
-      );
+    const validationError =
+      ProgressManager.validateNickname(nickname);
 
-    if (validation) {
-      this.showMessage(
-        validation
-      );
+    if (validationError) {
+      this.showMessage(validationError);
 
       AudioManager.speak(
-        validation
+        validationError
       );
 
       return;
     }
 
-    this.submitting =
-      true;
+    this.submitting = true;
 
     this.showMessage(
       "Verificando seu apelido..."
     );
 
-    let remoteProfile =
-      null;
-
-    let apiAvailable =
-      true;
-
     try {
-      // =====================================================
-      // 1. PRIMEIRO CONSULTA O BANCO
-      // =====================================================
+      /*
+       * Primeiro procuramos no armazenamento
+       * local do navegador.
+       */
+      const localProfile =
+        ProgressManager.findProfileByNickname(
+          nickname
+        );
 
-      try {
-        remoteProfile =
-          await ApiService.getPlayerByNickname(
-            nickname
-          );
-      } catch (error) {
-        // ---------------------------------------------------
-        // Jogador não encontrado
-        // ---------------------------------------------------
+      /*
+       * Depois procuramos no Backend.
+       *
+       * Não alteramos o Backend.
+       * Apenas consumimos a API que já existe.
+       */
+      let remotePlayer = null;
 
-        if (
-          error?.status ===
-          404
-        ) {
-          remoteProfile =
-            null;
-        } else {
-          // -------------------------------------------------
-          // API indisponível
-          // -------------------------------------------------
-
-          apiAvailable =
-            false;
-
-          console.warn(
-            "[ProfileScene] API indisponível. Usando perfil local.",
-            error
-          );
+      if (!ApiService.isMockEnabled()) {
+        try {
+          remotePlayer =
+            await ApiService.getPlayerByNickname(
+              nickname
+            );
+        } catch (error) {
+          /*
+           * 404 significa que o jogador ainda
+           * não existe.
+           *
+           * Qualquer outro erro é realmente
+           * um problema de comunicação.
+           */
+          if (error.status !== 404) {
+            throw error;
+          }
         }
       }
 
-      // =====================================================
-      // 2. JOGADOR EXISTE NO BANCO
-      // =====================================================
-
-      if (
-        remoteProfile
-      ) {
-        console.log(
-          "[ProfileScene] Jogador encontrado no banco:",
-          remoteProfile
-        );
-
-        this.showExistingProfile(
-          remoteProfile
+      /*
+       * JOGADOR ENCONTRADO NO BACKEND
+       */
+      if (remotePlayer) {
+        await this.openExistingRemotePlayer(
+          remotePlayer
         );
 
         return;
       }
 
-      // =====================================================
-      // 3. API FUNCIONOU, MAS JOGADOR NÃO EXISTE
-      // =====================================================
-
+      /*
+       * JOGADOR LOCAL ENCONTRADO
+       *
+       * Caso exista no navegador, carregamos
+       * os dados antes de continuar.
+       */
       if (
-        apiAvailable
+        localProfile &&
+        !String(
+          localProfile.playerId
+        ).startsWith("local-")
       ) {
-        const localProfile =
+        ProgressManager.loadProfile(
+          localProfile
+        );
+
+        await this.loadRemoteProgressIfPossible(
+          localProfile.playerId
+        );
+
+        const updatedProfile =
           ProgressManager.findProfileByNickname(
             nickname
           );
 
-        // ---------------------------------------------------
-        // Perfil existe apenas localmente
-        // ---------------------------------------------------
-
-        if (
-          localProfile
-        ) {
-          console.log(
-            "[ProfileScene] Perfil encontrado apenas localmente:",
-            localProfile
-          );
-
-          this.showExistingProfile(
-            localProfile
-          );
-
-          return;
-        }
-
-        // ---------------------------------------------------
-        // NOVO JOGADOR
-        // ---------------------------------------------------
-
-        const created =
-          await ApiService.createPlayer(
-            {
-              nickname,
-              avatar: "ae"
-            }
-          );
-
-        console.log(
-          "[ProfileScene] Jogador criado no banco:",
-          created
-        );
-
-        // ---------------------------------------------------
-        // Backend pode retornar:
-        //
-        // {
-        //   mensagem: "...",
-        //   jogador: {...}
-        // }
-        //
-        // ou diretamente o jogador.
-        // ---------------------------------------------------
-
-        const createdPlayer =
-          created?.jogador ||
-          created?.player ||
-          created;
-
-        const playerId =
-          createdPlayer?.id ||
-          createdPlayer?.playerId ||
-          null;
-
-        console.log(
-          "[ProfileScene] UUID do novo jogador:",
-          playerId
-        );
-
-        // ---------------------------------------------------
-        // Salva o perfil local já com UUID real
-        // ---------------------------------------------------
-
-        ProgressManager.createNewProfile(
-          nickname,
-          playerId
-        );
-
-        GameMetrics.reset();
-
-        GameMetrics.startGame();
-
-        this.scene.start(
-          "AvatarScene"
+        this.showExistingProfile(
+          updatedProfile
         );
 
         return;
       }
 
-      // =====================================================
-      // 4. FALLBACK PARA PERFIL LOCAL
-      // =====================================================
+      /*
+       * NOVO JOGADOR
+       */
+      const player =
+        await ApiService.createPlayer({
+          nickname,
+          avatar: "ae"
+        });
+
+      /*
+       * Compatibilidade com possíveis formatos
+       * de resposta da API.
+       */
+      const playerId =
+        player?.jogador?.id ||
+        player?.id;
+
+      /*
+       * Criamos o perfil local associado
+       * ao ID real do Backend.
+       */
+      ProgressManager.createNewProfile(
+        nickname,
+        playerId || null
+      );
+
+      GameMetrics.reset();
+      GameMetrics.startGame();
+
+      /*
+       * IMPORTANTE:
+       * o jogador já está identificado aqui.
+       *
+       * Agora vai para AvatarScene.
+       *
+       * O AvatarScene NÃO deve pedir o apelido
+       * novamente.
+       */
+      this.scene.start(
+        "AvatarScene"
+      );
+
+    } catch (error) {
+
+      /*
+       * O Backend informou que o apelido
+       * já existe.
+       */
+      if (error.status === 409) {
+        this.showMessage(
+          "Esse apelido já está sendo utilizado. Tente outro."
+        );
+
+        AudioManager.speak(
+          "Esse apelido já está sendo utilizado. Tente outro."
+        );
+
+        return;
+      }
+
+      /*
+       * Se a API estiver temporariamente
+       * indisponível, tentamos trabalhar
+       * com o perfil local.
+       */
+      console.warn(
+        "API indisponível. Usando perfil local.",
+        error
+      );
 
       const localProfile =
         ProgressManager.findProfileByNickname(
           nickname
         );
 
-      if (
-        localProfile
-      ) {
-        console.log(
-          "[ProfileScene] Usando perfil local:",
+      if (localProfile) {
+
+        ProgressManager.loadProfile(
           localProfile
         );
+
+        GameMetrics.load();
 
         this.showExistingProfile(
           localProfile
         );
 
-        return;
+      } else {
+
+        /*
+         * Nenhum perfil encontrado.
+         * Criamos um perfil local.
+         */
+        ProgressManager.createNewProfile(
+          nickname,
+          null
+        );
+
+        GameMetrics.reset();
+        GameMetrics.startGame();
+
+        this.scene.start(
+          "AvatarScene"
+        );
       }
 
-      // =====================================================
-      // 5. NÃO ENCONTROU NADA
-      // =====================================================
-
-      ProgressManager.createNewProfile(
-        nickname
-      );
-
-      GameMetrics.reset();
-
-      GameMetrics.startGame();
-
-      this.scene.start(
-        "AvatarScene"
-      );
-
-    } catch (error) {
-      console.error(
-        "[ProfileScene] Erro ao entrar:",
-        error
-      );
-
-      this.showMessage(
-        error?.payload?.error ||
-          error?.payload?.mensagem ||
-          error?.message ||
-          "Não foi possível verificar o apelido."
-      );
-
-      AudioManager.speak(
-        "Não foi possível verificar o apelido. Tente novamente."
-      );
     } finally {
-      this.submitting =
-        false;
+      this.submitting = false;
     }
   }
 
-  // =========================================================
-  // MENSAGEM
-  // =========================================================
-
-  showMessage(
-    message
+  async loadRemoteProgressIfPossible(
+    playerId
   ) {
-    this.message?.destroy();
+    if (
+      !playerId ||
+      String(playerId).startsWith("local-") ||
+      ApiService.isMockEnabled()
+    ) {
+      return;
+    }
 
-    this.message =
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          325,
-          message,
-          {
-            fontFamily: "Arial",
-            fontSize: "20px",
-            fontStyle: "bold",
-            color: "#9A3F28",
-            align: "center",
-            wordWrap: {
-              width: 650
-            }
-          }
-        )
-        .setOrigin(0.5);
+    try {
+
+      const progress =
+        await ApiService.getProgress(
+          playerId
+        );
+
+      /*
+       * Aqui está uma parte importante
+       * para resolver o problema que você
+       * relatou:
+       *
+       * o Backend salva, mas a interface
+       * não mostrava o progresso.
+       *
+       * Pegamos o progresso da API e
+       * colocamos dentro do GameState.
+       */
+      GameState.applyRemoteProgress(
+        progress
+      );
+
+      /*
+       * Depois salvamos esse estado
+       * carregado também no navegador.
+       */
+      ProgressManager.save();
+
+      /*
+       * Carrega as métricas do jogador.
+       */
+      GameMetrics.load();
+
+    } catch (error) {
+
+      console.warn(
+        "Não foi possível carregar o progresso remoto.",
+        error
+      );
+    }
   }
 
-  // =========================================================
-  // PERFIL EXISTENTE
-  // =========================================================
-
-  showExistingProfile(
-    profile
+  async openExistingRemotePlayer(
+    player
   ) {
-    // =====================================================
-    // RECUPERA O ID
-    // =====================================================
+    const playerId =
+      player?.id ||
+      player?.playerId;
 
-    let playerId =
-      profile.playerId ||
-      profile.id ||
-      profile.jogador?.id;
+    const nickname =
+      player?.nickname ||
+      this.inputElement?.value.trim();
 
-    // =====================================================
-    // IMPORTANTE:
-    // IDs "local-..." NÃO SÃO UUIDs DO BANCO
-    // =====================================================
-
-    if (
-      typeof playerId ===
-        "string" &&
-      playerId.startsWith(
-        "local-"
-      )
-    ) {
-      console.warn(
-        "[ProfileScene] ID local detectado. Não será enviado para a API:",
+    /*
+     * Se a resposta do endpoint já trouxe
+     * o progresso, usamos ele.
+     *
+     * Caso contrário, consultamos a API.
+     */
+    const progress =
+      player?.progress ||
+      await ApiService.getProgress(
         playerId
       );
 
-      playerId =
-        null;
-    }
-
-    // =====================================================
-    // DADOS DO PERFIL
-    // =====================================================
-
-    const currentPhase =
-      profile.currentPhase ??
-      profile.progresso?.currentPhase ??
-      1;
-
-    const score =
-      profile.score ??
-      profile.progresso?.score ??
-      0;
-
-    const stars =
-      profile.stars ??
-      profile.progresso?.stars ??
-      0;
-
-    const nickname =
-      profile.nickname ||
-      profile.jogador?.nickname ||
-      "";
-
-    const normalizedProfile = {
-      ...profile,
-
+    /*
+     * Montamos um perfil completo para o
+     * GameState.
+     */
+    const profile = {
       playerId,
 
-      currentPhase,
+      nickname,
 
-      score,
+      nicknameNormalized:
+        nickname.toLocaleLowerCase(
+          "pt-BR"
+        ),
 
-      stars,
+      avatar:
+        player?.avatar || "ae",
 
-      nickname
+      currentPhase:
+        Number(
+          progress?.currentPhase || 1
+        ),
+
+      score:
+        Number(
+          progress?.score || 0
+        ),
+
+      stars:
+        Number(
+          progress?.stars || 0
+        ),
+
+      completedPhases:
+        Array.isArray(
+          progress?.completedPhases
+        )
+          ? [
+              ...progress.completedPhases
+            ]
+          : [],
+
+      accessibility:
+        progress?.accessibility ||
+        GameState.get().accessibility,
+
+      updatedAt:
+        new Date().toISOString()
     };
 
-    console.log(
-      "[ProfileScene] Perfil normalizado:",
-      normalizedProfile
+    /*
+     * Coloca o progresso recuperado
+     * dentro do GameState.
+     */
+    ProgressManager.loadProfile(
+      profile
     );
 
-    // =====================================================
-    // MOSTRA OPÇÕES
-    // =====================================================
+    /*
+     * Agora o jogador verá a tela
+     * perguntando se deseja continuar.
+     */
+    this.showExistingProfile(
+      profile
+    );
+  }
+
+  showMessage(message) {
+    this.message?.destroy();
+
+    this.message =
+      this.add.text(
+        GAME_WIDTH / 2,
+        325,
+        message,
+        {
+          fontFamily: "Arial",
+          fontSize: "20px",
+          fontStyle: "bold",
+          color: "#9A3F28",
+          align: "center",
+          wordWrap: {
+            width: 650
+          }
+        }
+      ).setOrigin(0.5);
+  }
+
+  /*
+   * =====================================================
+   * PERFIL EXISTENTE
+   * =====================================================
+   *
+   * ESTA É A PARTE QUE VOCÊ NÃO ESTAVA ACHANDO.
+   *
+   * Agora ela está claramente dentro do arquivo.
+   */
+  showExistingProfile(profile) {
 
     this.showChoice(
-      `Encontramos uma aventura de ${normalizedProfile.nickname}.\n\nFase atual: ${currentPhase}\nPontuação: ${score}\nEstrelas: ${stars}\n\nVocê quer continuar?`,
+
+      `Encontramos uma aventura de ${profile.nickname}.\n\n` +
+
+      `Fase atual: ${profile.currentPhase}\n` +
+
+      `Pontuação: ${profile.score}\n` +
+
+      `Estrelas: ${profile.stars}\n\n` +
+
+      "Você quer continuar?",
 
       [
-        // ===================================================
-        // CONTINUAR
-        // ===================================================
 
         [
           "CONTINUAR AVENTURA",
 
-          async () => {
-            try {
-              // ---------------------------------------------
-              // Salva perfil local
-              // ---------------------------------------------
+          () => {
 
-              ProgressManager.loadProfile(
-                normalizedProfile
-              );
+            /*
+             * Recarrega o perfil.
+             */
+            ProgressManager.loadProfile(
+              profile
+            );
 
-              GameMetrics.load();
+            /*
+             * Recarrega as métricas.
+             */
+            GameMetrics.load();
 
-              // ---------------------------------------------
-              // Só consulta API se tiver UUID real
-              // ---------------------------------------------
-
-              if (
-                normalizedProfile.playerId
-              ) {
-                console.log(
-                  "[ProfileScene] Carregando progresso remoto para:",
-                  normalizedProfile.playerId
-                );
-
-                try {
-                  const response =
-                    await ApiService.getProgress(
-                      normalizedProfile.playerId
-                    );
-
-                  // -----------------------------------------
-                  // O backend retorna:
-                  //
-                  // {
-                  //   mensagem: "...",
-                  //   progresso: { current_phase, score, stars, ... }
-                  // }
-                  //
-                  // Os dados reais estão dentro de "progresso".
-                  // -----------------------------------------
-
-                  const progressData =
-                    response?.progresso;
-
-                  if (
-                    progressData
-                  ) {
-                    console.log(
-                      "[ProfileScene] Progresso remoto:",
-                      progressData
-                    );
-
-                    GameState.applyRemoteProgress?.(
-                      progressData
-                    );
-                  } else {
-                    console.log(
-                      "[ProfileScene] Nenhum progresso remoto encontrado. Mantendo progresso local."
-                    );
-                  }
-                } catch (error) {
-                  console.warn(
-                    "[ProfileScene] Não foi possível carregar o progresso remoto.",
-                    error
-                  );
-                }
-              } else {
-                console.log(
-                  "[ProfileScene] Perfil sem UUID remoto. Continuando com progresso local."
-                );
-              }
-
-              // ---------------------------------------------
-              // Vai para seleção de avatar
-              // ---------------------------------------------
-
-              this.scene.start(
-                "AvatarScene"
-              );
-
-            } catch (error) {
-              console.error(
-                "[ProfileScene] Erro ao continuar aventura:",
-                error
-              );
-
-              this.showMessage(
-                "Não foi possível carregar sua aventura."
-              );
-            }
+            /*
+             * IMPORTANTE:
+             *
+             * Não vamos mandar o jogador
+             * para o começo.
+             *
+             * O AvatarScene será responsável
+             * por encaminhar para a fase
+             * correta.
+             */
+            this.scene.start(
+              "AvatarScene"
+            );
           }
         ],
-
-        // ===================================================
-        // COMEÇAR DO ZERO
-        // ===================================================
 
         [
           "COMEÇAR DO ZERO",
 
-          async () => {
-            try {
-              ProgressManager.clearCurrentProfile();
+          () => {
 
-              let playerId =
-                normalizedProfile.playerId;
+            /*
+             * Apaga o progresso local
+             * desse perfil.
+             */
+            ProgressManager.clearCurrentProfile();
 
-              // ------------------------------------------------
-              // Se o perfil existente não tem UUID real,
-              // tenta criar/recuperar no backend.
-              // ------------------------------------------------
+            /*
+             * Cria novamente o perfil
+             * mantendo o mesmo playerId.
+             *
+             * Assim o Backend continuará
+             * reconhecendo o mesmo jogador.
+             */
+            ProgressManager.createNewProfile(
+              profile.nickname,
+              profile.playerId || null
+            );
 
-              if (
-                !playerId
-              ) {
-                try {
-                  const created =
-                    await ApiService.createPlayer(
-                      {
-                        nickname:
-                          normalizedProfile.nickname,
+            GameMetrics.reset();
+            GameMetrics.startGame();
 
-                        avatar:
-                          "ae"
-                      }
-                    );
-
-                  const createdPlayer =
-                    created?.jogador ||
-                    created?.player ||
-                    created;
-
-                  playerId =
-                    createdPlayer?.id ||
-                    createdPlayer?.playerId ||
-                    null;
-
-                } catch (error) {
-                  console.warn(
-                    "[ProfileScene] Não foi possível recriar perfil no banco.",
-                    error
-                  );
-                }
-              }
-
-              ProgressManager.createNewProfile(
-                normalizedProfile.nickname,
-                playerId
-              );
-
-              GameMetrics.reset();
-
-              GameMetrics.startGame();
-
-              this.scene.start(
-                "AvatarScene"
-              );
-
-            } catch (error) {
-              console.error(
-                "[ProfileScene] Erro ao começar do zero:",
-                error
-              );
-            }
+            /*
+             * Vai para escolha do avatar.
+             */
+            this.scene.start(
+              "AvatarScene"
+            );
           }
         ],
-
-        // ===================================================
-        // ESCOLHER OUTRO
-        // ===================================================
 
         [
           "ESCOLHER OUTRO",
 
-          () =>
-            this.closeChoice()
+          () => {
+            this.closeChoice();
+          }
         ]
+
       ]
     );
   }
-
-  // =========================================================
-  // CHOICE
-  // =========================================================
 
   showChoice(
     message,
     options
   ) {
+
     this.closeChoice();
 
+    /*
+     * Fundo escuro.
+     */
     this.choiceOverlay =
-      this.add
-        .rectangle(
-          GAME_WIDTH / 2,
-          GAME_HEIGHT / 2,
-          780,
-          560,
-          0x18332C,
-          0.96
-        )
+      this.add.rectangle(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2,
+        780,
+        560,
+        0x18332C,
+        0.96
+      )
         .setDepth(50)
         .setStrokeStyle(
           5,
-          0xFFFFFF
+          COLORS.white
         );
 
+    /*
+     * Texto do perfil.
+     */
     this.choiceText =
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          175,
-          message,
-          {
-            fontFamily: "Arial",
-            fontSize: "22px",
-            fontStyle: "bold",
-            color: "#FFFFFF",
-            align: "center",
-            wordWrap: {
-              width: 680
-            },
-            lineSpacing: 7
-          }
-        )
+      this.add.text(
+        GAME_WIDTH / 2,
+        170,
+        message,
+        {
+          fontFamily: "Arial",
+          fontSize: "23px",
+          fontStyle: "bold",
+          color: "#FFFFFF",
+          align: "center",
+          wordWrap: {
+            width: 680
+          },
+          lineSpacing: 8
+        }
+      )
         .setOrigin(0.5)
         .setDepth(51);
 
-    const baseY =
-      335;
-
+    /*
+     * Botões.
+     */
     options.forEach(
-      (
-        [label, callback],
-        index
-      ) => {
+      ([label, callback], index) => {
+
         const y =
-          baseY +
-          index * 65;
+          325 + index * 70;
+
+        const color =
+          index === options.length - 1
+            ? COLORS.orange
+            : COLORS.forest;
 
         const button =
-          this.add
-            .rectangle(
-              GAME_WIDTH / 2,
-              y,
-              420,
-              52,
-              index ===
-                options.length - 1
-                ? 0xD89B3C
-                : 0x4C8A3A
-            )
+          this.add.rectangle(
+            GAME_WIDTH / 2,
+            y,
+            440,
+            56,
+            color
+          )
             .setDepth(51)
+            .setStrokeStyle(
+              3,
+              COLORS.white
+            )
             .setInteractive({
               useHandCursor: true
             });
 
         const text =
-          this.add
-            .text(
-              GAME_WIDTH / 2,
-              y,
-              label,
-              {
-                fontFamily:
-                  "Arial",
-                fontSize:
-                  "18px",
-                fontStyle:
-                  "bold",
-                color:
-                  "#FFFFFF"
-              }
-            )
+          this.add.text(
+            GAME_WIDTH / 2,
+            y,
+            label,
+            {
+              fontFamily: "Arial",
+              fontSize: "18px",
+              fontStyle: "bold",
+              color: "#FFFFFF"
+            }
+          )
             .setOrigin(0.5)
             .setDepth(52);
 
         button.on(
           "pointerover",
           () => {
-            button.setScale(
-              1.03
-            );
-
-            text.setScale(
-              1.03
-            );
+            button.setScale(1.03);
+            text.setScale(1.03);
           }
         );
 
         button.on(
           "pointerout",
           () => {
-            button.setScale(
-              1
-            );
-
-            text.setScale(
-              1
-            );
+            button.setScale(1);
+            text.setScale(1);
           }
         );
 
@@ -1068,23 +848,28 @@ export class ProfileScene extends Phaser.Scene {
           "pointerdown",
           callback
         );
+
+        this.choiceObjects.push(
+          button,
+          text
+        );
       }
     );
   }
 
-  // =========================================================
-  // FECHAR CHOICE
-  // =========================================================
-
   closeChoice() {
+
     this.choiceOverlay?.destroy();
 
     this.choiceText?.destroy();
 
-    this.choiceOverlay =
-      null;
+    this.choiceObjects.forEach(
+      item => item?.destroy()
+    );
 
-    this.choiceText =
-      null;
+    this.choiceObjects = [];
+
+    this.choiceOverlay = null;
+    this.choiceText = null;
   }
 }

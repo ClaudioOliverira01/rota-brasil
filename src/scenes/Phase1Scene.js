@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { COLORS } from "../config/gameConfig.js";
 import { CARDINAL_DIRECTIONS } from "../data/gameData.js";
 import { GameState } from "../systems/GameState.js";
+import { GameMetrics } from "../systems/GameMetrics.js";
 import { ProgressManager } from "../systems/ProgressManager.js";
 import { ApiService } from "../services/ApiService.js";
 import { AudioManager } from "../systems/AudioManager.js";
@@ -42,9 +43,23 @@ export class Phase1Scene extends Phaser.Scene {
 
     this.feedbackContainer = null;
     this.scoreText = null;
+
+    this.errorCount = 0;
   }
 
   create() {
+    // Zera o estado da fase (a cena é reaproveitada ao jogar de novo)
+    this.correct = 0;
+    this.errorCount = 0;
+    this.targets = {};
+    this.cards = {};
+    this.draggingCard = null;
+    this.dragPointerId = null;
+    this.feedbackContainer = null;
+
+    // Começa a contar o tempo da fase 1
+    GameMetrics.startPhase(1);
+
     this.cameras.main.setBackgroundColor(COLORS.skyLight);
 
     this.createHeader();
@@ -63,41 +78,41 @@ export class Phase1Scene extends Phaser.Scene {
   // =========================================================
 
   createHeader() {
-  // Box "FASE 1"
-  this.add
-    .rectangle(105, 42, 118, 48, COLORS.forest, 1)
-    .setOrigin(0.5)
-    .setStrokeStyle(3, COLORS.white, 1);
+    // Box "FASE 1"
+    this.add
+      .rectangle(105, 42, 118, 48, COLORS.forest, 1)
+      .setOrigin(0.5)
+      .setStrokeStyle(3, COLORS.white, 1);
 
-  this.add
-    .text(105, 42, "FASE 1", {
-      fontFamily: "Arial",
-      fontSize: "23px",
-      fontStyle: "bold",
-      color: "#ffffff"
-    })
-    .setOrigin(0.5);
+    this.add
+      .text(105, 42, "FASE 1", {
+        fontFamily: "Arial",
+        fontSize: "23px",
+        fontStyle: "bold",
+        color: "#ffffff"
+      })
+      .setOrigin(0.5);
 
-  // Título principal
-  this.add
-    .text(640, 42, "O MISTÉRIO DA BÚSSOLA", {
-      fontFamily: "Arial",
-      fontSize: "34px",
-      fontStyle: "bold",
-      color: "#07543d"
-    })
-    .setOrigin(0.5);
+    // Título principal
+    this.add
+      .text(640, 42, "O MISTÉRIO DA BÚSSOLA", {
+        fontFamily: "Arial",
+        fontSize: "34px",
+        fontStyle: "bold",
+        color: "#07543d"
+      })
+      .setOrigin(0.5);
 
-  // Pontuação
-  this.scoreText = this.add
-    .text(1235, 42, `⭐ ${GameState.get().score}`, {
-      fontFamily: "Arial",
-      fontSize: "23px",
-      fontStyle: "bold",
-      color: "#07543d"
-    })
-    .setOrigin(1, 0.5);
-}
+    // Pontuação
+    this.scoreText = this.add
+      .text(1235, 42, `⭐ ${GameState.get().score}`, {
+        fontFamily: "Arial",
+        fontSize: "23px",
+        fontStyle: "bold",
+        color: "#07543d"
+      })
+      .setOrigin(1, 0.5);
+  }
 
   // =========================================================
   // MISSÃO
@@ -292,10 +307,7 @@ export class Phase1Scene extends Phaser.Scene {
         position.y
       );
 
-      // -----------------------------------------------------
       // SOMBRA
-      // -----------------------------------------------------
-
       const shadow = this.add.graphics();
 
       shadow.fillStyle(0x000000, 0.14);
@@ -310,10 +322,7 @@ export class Phase1Scene extends Phaser.Scene {
 
       container.add(shadow);
 
-      // -----------------------------------------------------
       // CARTÃO
-      // -----------------------------------------------------
-
       const card = this.add.graphics();
 
       card.fillStyle(direction.color, 1);
@@ -338,10 +347,7 @@ export class Phase1Scene extends Phaser.Scene {
 
       container.add(card);
 
-      // -----------------------------------------------------
       // TEXTO
-      // -----------------------------------------------------
-
       const label = this.add
         .text(
           0,
@@ -359,10 +365,7 @@ export class Phase1Scene extends Phaser.Scene {
 
       container.add(label);
 
-      // -----------------------------------------------------
       // ÁREA INTERATIVA
-      // -----------------------------------------------------
-
       const hitArea = this.add.rectangle(
         0,
         0,
@@ -378,10 +381,7 @@ export class Phase1Scene extends Phaser.Scene {
 
       container.add(hitArea);
 
-      // -----------------------------------------------------
       // DADOS
-      // -----------------------------------------------------
-
       container.setData("directionId", direction.id);
       container.setData("homeX", position.x);
       container.setData("homeY", position.y);
@@ -392,10 +392,7 @@ export class Phase1Scene extends Phaser.Scene {
 
       this.cards[direction.id] = container;
 
-      // -----------------------------------------------------
       // INTERAÇÕES
-      // -----------------------------------------------------
-
       hitArea.on("pointerover", () => {
         if (this.draggingCard || !hitArea.input.enabled) {
           return;
@@ -421,10 +418,7 @@ export class Phase1Scene extends Phaser.Scene {
       });
     });
 
-    // -------------------------------------------------------
     // EVENTOS GLOBAIS DO MOUSE
-    // -------------------------------------------------------
-
     this.input.on("pointermove", (pointer) => {
       this.moveDraggedCard(pointer);
     });
@@ -519,17 +513,8 @@ export class Phase1Scene extends Phaser.Scene {
     const card = this.draggingCard;
 
     // Mantém o cartão dentro da área útil do jogo
-    card.x = Phaser.Math.Clamp(
-      pointer.x,
-      135,
-      1145
-    );
-
-    card.y = Phaser.Math.Clamp(
-      pointer.y,
-      220,
-      555
-    );
+    card.x = Phaser.Math.Clamp(pointer.x, 135, 1145);
+    card.y = Phaser.Math.Clamp(pointer.y, 220, 555);
 
     this.updateTargetHighlight();
   }
@@ -577,16 +562,9 @@ export class Phase1Scene extends Phaser.Scene {
       target &&
       target.getData("directionId") === directionId
     ) {
-      this.handleCorrect(
-        card,
-        target,
-        direction
-      );
+      this.handleCorrect(card, target, direction);
     } else {
-      this.handleWrong(
-        card,
-        direction
-      );
+      this.handleWrong(card, direction);
     }
   }
 
@@ -642,10 +620,7 @@ export class Phase1Scene extends Phaser.Scene {
     if (background) {
       background.clear();
 
-      background.fillStyle(
-        COLORS.cream,
-        1
-      );
+      background.fillStyle(COLORS.cream, 1);
 
       background.fillRoundedRect(
         -TARGET_WIDTH / 2,
@@ -655,11 +630,7 @@ export class Phase1Scene extends Phaser.Scene {
         18
       );
 
-      background.lineStyle(
-        6,
-        COLORS.orange,
-        1
-      );
+      background.lineStyle(6, COLORS.orange, 1);
 
       background.strokeRoundedRect(
         -TARGET_WIDTH / 2,
@@ -684,10 +655,7 @@ export class Phase1Scene extends Phaser.Scene {
       if (background) {
         background.clear();
 
-        background.fillStyle(
-          COLORS.white,
-          0.98
-        );
+        background.fillStyle(COLORS.white, 0.98);
 
         background.fillRoundedRect(
           -TARGET_WIDTH / 2,
@@ -697,11 +665,7 @@ export class Phase1Scene extends Phaser.Scene {
           18
         );
 
-        background.lineStyle(
-          4,
-          COLORS.forest,
-          1
-        );
+        background.lineStyle(4, COLORS.forest, 1);
 
         background.strokeRoundedRect(
           -TARGET_WIDTH / 2,
@@ -732,7 +696,6 @@ export class Phase1Scene extends Phaser.Scene {
     card.y = target.y;
 
     card.setScale(1);
-
     card.setAlpha(1);
 
     const shadow = card.getData("shadow");
@@ -746,10 +709,7 @@ export class Phase1Scene extends Phaser.Scene {
     if (cardGraphic) {
       cardGraphic.clear();
 
-      cardGraphic.fillStyle(
-        COLORS.success,
-        1
-      );
+      cardGraphic.fillStyle(COLORS.success, 1);
 
       cardGraphic.fillRoundedRect(
         -CARD_WIDTH / 2,
@@ -759,11 +719,7 @@ export class Phase1Scene extends Phaser.Scene {
         18
       );
 
-      cardGraphic.lineStyle(
-        4,
-        COLORS.white,
-        1
-      );
+      cardGraphic.lineStyle(4, COLORS.white, 1);
 
       cardGraphic.strokeRoundedRect(
         -CARD_WIDTH / 2,
@@ -776,16 +732,12 @@ export class Phase1Scene extends Phaser.Scene {
 
     target.setScale(1);
 
-    const targetBackground =
-      target.getData("background");
+    const targetBackground = target.getData("background");
 
     if (targetBackground) {
       targetBackground.clear();
 
-      targetBackground.fillStyle(
-        0xdff6e8,
-        1
-      );
+      targetBackground.fillStyle(0xdff6e8, 1);
 
       targetBackground.fillRoundedRect(
         -TARGET_WIDTH / 2,
@@ -795,11 +747,7 @@ export class Phase1Scene extends Phaser.Scene {
         18
       );
 
-      targetBackground.lineStyle(
-        4,
-        COLORS.success,
-        1
-      );
+      targetBackground.lineStyle(4, COLORS.success, 1);
 
       targetBackground.strokeRoundedRect(
         -TARGET_WIDTH / 2,
@@ -841,8 +789,11 @@ export class Phase1Scene extends Phaser.Scene {
   // =========================================================
 
   handleWrong(card, direction) {
-    const original =
-      CARD_POSITIONS[direction.id];
+    // Conta o erro desta tentativa
+    this.errorCount += 1;
+    GameMetrics.registerError(1);
+
+    const original = CARD_POSITIONS[direction.id];
 
     const duration =
       GameState.get().accessibility.reducedMotion
@@ -879,126 +830,87 @@ export class Phase1Scene extends Phaser.Scene {
       this.feedbackContainer.destroy(true);
     }
 
-    this.feedbackContainer =
-      this.add.container(
-        640,
-        675
-      );
+    this.feedbackContainer = this.add.container(640, 675);
 
     this.feedbackContainer.setDepth(50);
 
     const bg = this.add.graphics();
 
-    bg.fillStyle(
-      color,
-      1
-    );
+    bg.fillStyle(color, 1);
 
-    bg.fillRoundedRect(
-      -440,
-      -24,
-      880,
-      48,
-      16
-    );
+    bg.fillRoundedRect(-440, -24, 880, 48, 16);
 
-    bg.lineStyle(
-      3,
-      COLORS.white,
-      1
-    );
+    bg.lineStyle(3, COLORS.white, 1);
 
-    bg.strokeRoundedRect(
-      -440,
-      -24,
-      880,
-      48,
-      16
-    );
+    bg.strokeRoundedRect(-440, -24, 880, 48, 16);
 
     const text = this.add
-      .text(
-        0,
-        0,
-        message,
-        {
-          fontFamily: "Arial",
-          fontSize: "17px",
-          fontStyle: "bold",
-          color: "#ffffff",
-          align: "center",
-          wordWrap: {
-            width: 820
-          }
+      .text(0, 0, message, {
+        fontFamily: "Arial",
+        fontSize: "17px",
+        fontStyle: "bold",
+        color: "#ffffff",
+        align: "center",
+        wordWrap: {
+          width: 820
         }
-      )
+      })
       .setOrigin(0.5);
 
-    this.feedbackContainer.add([
-      bg,
-      text
-    ]);
+    this.feedbackContainer.add([bg, text]);
   }
 
   // =========================================================
   // FINALIZAÇÃO DA FASE
   // =========================================================
 
-async finishPhase() {
+  async finishPhase() {
+    GameState.completePhase(1);
 
-  console.log(
-    "FASE 1: finishPhase() foi chamada"
-  );
+    ProgressManager.save();
 
-  GameState.completePhase(1);
+    const state = GameState.get();
 
-  ProgressManager.save();
+    // Para o cronômetro e calcula o tempo da fase
+    GameMetrics.completePhase(1, state.score);
 
-  const state =
-    GameState.get();
+    const timeSeconds =
+      GameMetrics.get().phases[1]?.timeSeconds ?? 0;
 
-  try {
+    // Estrelas desta fase pela quantidade de erros (mesma regra da Fase 2)
+    const phaseStars =
+      GameMetrics.starsForErrors(this.errorCount);
 
-    await ApiService.savePhaseResult({
+    try {
+      await ApiService.savePhaseResult({
+        playerId: state.playerId,
+        phase: 1,
+        score: state.score,
+        stars: phaseStars,
+        completed: true,
+        timeSeconds,
+        errors: this.errorCount
+      });
 
-      playerId:
-        state.playerId,
+      await ApiService.saveProgress({
+        playerId: state.playerId,
+        currentPhase: state.currentPhase,
+        score: state.score,
+        stars: phaseStars
+      });
+    } catch (error) {
+      console.warn(
+        "API indisponível. Progresso permanece salvo localmente.",
+        error
+      );
+    }
 
-      phase:
-        1,
-
-      score:
-        state.score,
-
-      stars:
-        3,
-
-      completed:
-        true
-    });
-
-    await ApiService.saveProgress({
-      playerId: state.playerId,
-      currentPhase: 2,
-      score: state.score,
-      stars: 3
-    });
-
-  } catch (error) {
-
-    console.warn(
-      "API indisponível. Progresso permanece salvo localmente.",
-      error
-    );
-  }
-
-  this.scene.start(
-    "VictoryScene",
-    {
+    this.scene.start("VictoryScene", {
       phase: 1,
       score: state.score,
-      stars: 3
-      }
-    );
+      stars: phaseStars,
+      timeSeconds,
+      timeText: GameMetrics.formatTime(timeSeconds)
+    });
   }
 }

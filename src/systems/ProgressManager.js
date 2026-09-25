@@ -1,30 +1,22 @@
 import { GameState } from "./GameState.js";
 import { GameMetrics } from "./GameMetrics.js";
 
-const STORAGE_KEY =
-  "rota-brasil-profiles-v3";
+const STORAGE_KEY = "rota-brasil-profiles-v3";
 
-function normalizeNickname(
-  nickname
-) {
-  return String(
-    nickname || ""
-  )
+
+function normalizeNickname(nickname) {
+  return String(nickname || "")
     .trim()
-    .toLocaleLowerCase(
-      "pt-BR"
-    );
+    .toLocaleLowerCase("pt-BR");
 }
 
-function createLocalId() {
-  return `local-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
-}
 
 export const ProgressManager = {
+
   validateNickname(nickname) {
+
     const value =
-      String(nickname || "")
-        .trim();
+      String(nickname || "").trim();
 
     if (
       value.length < 2 ||
@@ -34,110 +26,150 @@ export const ProgressManager = {
     }
 
     if (
-      !/^[\p{L}\p{N} _-]+$/u.test(
-        value
-      )
+      !/^[\p{L}\p{N} _-]+$/u.test(value)
     ) {
-      return "Use apenas letras, números, espaço, _ ou -.";
+      return "Use apenas letras, números, espaço, _ ou - .";
     }
 
     return null;
   },
 
+
   getProfiles() {
+
     try {
+
       const raw =
         localStorage.getItem(
           STORAGE_KEY
         );
 
-      if (!raw) {
-        return [];
-      }
-
       const profiles =
-        JSON.parse(raw);
+        raw
+          ? JSON.parse(raw)
+          : [];
 
-      return Array.isArray(
-        profiles
-      )
+      return Array.isArray(profiles)
         ? profiles
         : [];
+
     } catch {
+
       return [];
+
     }
   },
 
-  findProfilesByNickname(
-    nickname
-  ) {
+
+  findProfileByNickname(nickname) {
+
     const normalized =
       normalizeNickname(
         nickname
       );
 
-    return this.getProfiles()
-      .filter(
+    return this
+      .getProfiles()
+      .find(
         profile =>
           profile.nicknameNormalized ===
           normalized
-      );
+      ) || null;
   },
 
-  findProfileByNickname(
-    nickname
-  ) {
-    return (
-      this.findProfilesByNickname(
-        nickname
-      )[0] || null
-    );
-  },
 
   save() {
+
     const state =
       GameState.get();
 
     const profiles =
       this.getProfiles();
 
+
     const nickname =
       String(
         state.nickname ||
-          "Explorador"
+        "Explorador"
       ).trim();
+
 
     const nicknameNormalized =
       normalizeNickname(
         nickname
       );
 
+
+    /*
+     * Mantém o ID existente.
+     *
+     * Só cria um novo ID quando realmente
+     * não existe nenhum.
+     */
     const playerId =
       state.playerId ||
-      createLocalId();
+      `local-${
+        globalThis.crypto?.randomUUID?.() ||
+        Date.now()
+      }`;
+
 
     const profile = {
+
       playerId,
+
       nickname,
+
       nicknameNormalized,
+
       avatar:
         state.avatar || "ae",
+
       currentPhase:
-        state.currentPhase,
+        Number(
+          state.currentPhase || 1
+        ),
+
       score:
-        state.score,
+        Number(
+          state.score || 0
+        ),
+
       stars:
-        state.stars,
+        Number(
+          state.stars || 0
+        ),
+
       completedPhases:
-        [
-          ...state.completedPhases
-        ],
+        Array.isArray(
+          state.completedPhases
+        )
+          ? [
+              ...state.completedPhases
+            ]
+          : [],
+
       accessibility: {
-        ...state.accessibility
+
+        narration:
+          state.accessibility?.narration ??
+          true,
+
+        highContrast:
+          state.accessibility?.highContrast ??
+          false,
+
+        reducedMotion:
+          state.accessibility?.reducedMotion ??
+          false
+
       },
+
       updatedAt:
         new Date().toISOString()
+
     };
+
 
     const index =
       profiles.findIndex(
@@ -146,133 +178,220 @@ export const ProgressManager = {
           playerId
       );
 
+
     if (index >= 0) {
+
       profiles[index] =
         profile;
+
     } else {
+
       profiles.push(
         profile
       );
+
     }
+
 
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify(
-        profiles
-      )
+      JSON.stringify(profiles)
     );
 
-    if (!state.playerId) {
+
+    /*
+     * Atualiza o ID no estado global.
+     */
+    if (
+      !state.playerId
+    ) {
+
       state.playerId =
         playerId;
+
     }
+
+
+    /*
+     * Salva métricas localmente.
+     */
+    GameMetrics.save();
+
 
     return profile;
   },
+
+
+  loadProfile(profile) {
+
+    if (!profile) {
+      return false;
+    }
+
+
+    GameState.hydrate(
+      profile
+    );
+
+
+    GameMetrics.load();
+
+
+    return true;
+  },
+
 
   createNewProfile(
     nickname,
     playerId = null
   ) {
+
     const cleanNickname =
       String(
         nickname || ""
       ).trim();
 
+
+    /*
+     * IMPORTANTE:
+     *
+     * Guarda as configurações de acessibilidade
+     * antes de resetar o estado.
+     *
+     * Isso impede que a criança desligue a narração
+     * e ela volte a ligar quando o apelido for criado.
+     */
+    const previousAccessibility = {
+
+      ...(
+        GameState.get()
+          .accessibility || {}
+      )
+
+    };
+
+
+    /*
+     * Cria o estado inicial.
+     */
     GameState.reset();
 
-    GameState.setPlayer({
-      nickname:
-        cleanNickname,
-      avatar: "ae",
-      playerId:
-        playerId ||
-        createLocalId()
+
+    /*
+     * Restaura as configurações de acessibilidade.
+     */
+    GameState.setAccessibility({
+
+      narration:
+        previousAccessibility.narration ??
+        true,
+
+      highContrast:
+        previousAccessibility.highContrast ??
+        false,
+
+      reducedMotion:
+        previousAccessibility.reducedMotion ??
+        false
+
     });
 
+
+    /*
+     * Define o jogador.
+     */
+    GameState.setPlayer({
+
+      nickname:
+        cleanNickname,
+
+      avatar:
+        "ae",
+
+      playerId
+
+    });
+
+
+    /*
+     * Salva o perfil.
+     */
     this.save();
+
+
+    /*
+     * Inicia as métricas da aventura.
+     */
+    GameMetrics.reset();
+
+    GameMetrics.startGame();
+
+
+    /*
+     * Salva novamente depois de iniciar
+     * as métricas.
+     */
+    this.save();
+
 
     return GameState.get();
   },
 
-  loadProfile(profile) {
-    if (!profile) {
-      return false;
-    }
-
-    GameState.hydrate({
-      playerId:
-        profile.playerId ||
-        profile.id ||
-        null,
-      nickname:
-        profile.nickname ||
-        "",
-      avatar:
-        profile.avatar ||
-        "ae",
-      currentPhase:
-        Number(
-          profile.currentPhase ||
-            1
-        ),
-      score:
-        Number(
-          profile.score || 0
-        ),
-      stars:
-        Number(
-          profile.stars || 0
-        ),
-      completedPhases:
-        Array.isArray(
-          profile.completedPhases
-        )
-          ? profile.completedPhases
-          : [],
-      accessibility:
-        profile.accessibility
-    });
-
-    return true;
-  },
 
   clearCurrentProfile() {
+
     const state =
       GameState.get();
 
-    if (!state.playerId) {
-      GameState.reset();
-      return;
-    }
 
     const profiles =
-      this.getProfiles()
+      this
+        .getProfiles()
         .filter(
           profile =>
             profile.playerId !==
             state.playerId
         );
 
+
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify(
-        profiles
-      )
+      JSON.stringify(profiles)
     );
 
+
+    /*
+     * Remove as métricas locais
+     * desse jogador.
+     */
+    localStorage.removeItem(
+      `rota-brasil-metrics-v2-${
+        String(
+          state.playerId ||
+          state.nickname
+        )
+          .trim()
+          .toLowerCase()
+      }`
+    );
+
+
     GameState.reset();
+
+    GameMetrics.reset();
   },
 
+
   clearAll() {
+
     localStorage.removeItem(
       STORAGE_KEY
     );
 
-    GameState.reset();
-  },
 
-  saveMetrics() {
-    GameMetrics.save();
+    GameState.reset();
+
+    GameMetrics.reset();
   }
+
 };

@@ -11,27 +11,41 @@ import { GameMetrics } from "../systems/GameMetrics.js";
 import { ProgressManager } from "../systems/ProgressManager.js";
 import { ApiService } from "../services/ApiService.js";
 import { AudioManager } from "../systems/AudioManager.js";
+import { AccessibilityManager } from "../systems/AccessibilityManager.js";
 
 export class VictoryScene extends Phaser.Scene {
   constructor() {
     super("VictoryScene");
+
+    this.pdfButton = null;
+    this.pdfLoading = false;
   }
 
   create(data = {}) {
     const state =
       GameState.get();
 
-    const phase =
-      Number(
-        data.phase ||
-          Math.max(
-            ...state.completedPhases,
-            1
-          )
-      );
+    const completedPhases =
+      Array.isArray(
+        state.completedPhases
+      )
+        ? state.completedPhases
+        : [];
 
-    const isFinal =
-      phase >= 4;
+    const phase = Number(
+      data.phase ||
+      (
+        completedPhases.length
+          ? Math.max(...completedPhases)
+          : 1
+      )
+    );
+
+    const final =
+      Boolean(
+        data.final ||
+        phase >= 4
+      );
 
     const nextPhase =
       Math.min(
@@ -39,241 +53,132 @@ export class VictoryScene extends Phaser.Scene {
         4
       );
 
-    if (isFinal) {
-      GameMetrics.completeGame();
-    }
-
     const metrics =
       GameMetrics.get();
 
     const phaseMetrics =
-      metrics.phases?.[
-        phase
-      ] || {};
+      metrics.phases?.[phase] || {};
 
-    this.cameras.main.setBackgroundColor(
-      COLORS.sky
-    );
+    this.drawBackground();
 
     this.add
       .text(
-        GAME_WIDTH / 2,
-        80,
-        isFinal
+        640,
+        70,
+        final
           ? "EXPEDIÇÃO CONCLUÍDA! 🎉"
           : `FASE ${phase} CONCLUÍDA! 🎉`,
         {
-          fontFamily:
-            "Arial",
-          fontSize:
-            "44px",
-          fontStyle:
-            "bold",
-          color:
-            "#07543D"
+          fontFamily: "Arial",
+          fontSize: "42px",
+          fontStyle: "bold",
+          color: "#07543d",
+          align: "center"
         }
       )
       .setOrigin(0.5);
 
     this.add
       .text(
-        GAME_WIDTH / 2,
-        175,
+        640,
+        150,
         "🦜",
         {
-          fontFamily:
-            "Arial",
-          fontSize:
-            "110px"
+          fontFamily: "Arial",
+          fontSize: "100px"
         }
       )
       .setOrigin(0.5);
 
     this.add
       .text(
-        GAME_WIDTH / 2,
-        275,
-        isFinal
+        640,
+        245,
+        final
           ? "Você ajudou Aê a completar toda a expedição!"
-          : `Muito bem! Você completou a Fase ${phase}.`,
+          : "Muito bem! Sua aventura está avançando.",
         {
-          fontFamily:
-            "Arial",
-          fontSize:
-            "24px",
-          fontStyle:
-            "bold",
-          color:
-            "#18332C",
-          align:
-            "center"
+          fontFamily: "Arial",
+          fontSize: "23px",
+          fontStyle: "bold",
+          color: "#18332c",
+          align: "center"
         }
       )
       .setOrigin(0.5);
 
     this.add
       .text(
-        GAME_WIDTH / 2,
-        345,
-        `⭐ ${state.stars} estrelas    |    🏆 ${state.score} pontos`,
+        640,
+        295,
+        `⭐ ${state.stars} estrelas     🏆 ${state.score} pontos`,
         {
-          fontFamily:
-            "Arial",
-          fontSize:
-            "24px",
-          fontStyle:
-            "bold",
-          color:
-            "#07543D"
+          fontFamily: "Arial",
+          fontSize: "24px",
+          fontStyle: "bold",
+          color: "#07543d"
         }
       )
       .setOrigin(0.5);
 
     this.add
       .text(
-        GAME_WIDTH / 2,
-        390,
-        `❌ Erros nesta fase: ${
+        640,
+        335,
+        `❌ Erros na Fase ${phase}: ${
           phaseMetrics.errors || 0
+        }     ⏱️ Tempo: ${
+          GameMetrics.formatTime(
+            phaseMetrics.timeSeconds || 0
+          )
         }`,
         {
-          fontFamily:
-            "Arial",
-          fontSize:
-            "20px",
-          color:
-            "#9A3F28"
+          fontFamily: "Arial",
+          fontSize: "18px",
+          fontStyle: "bold",
+          color: "#31564a"
         }
       )
       .setOrigin(0.5);
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        425,
-        `⏱️ Tempo da fase: ${GameMetrics.formatTime(
-          phaseMetrics.timeSeconds || 0
-        )}`,
-        {
-          fontFamily:
-            "Arial",
-          fontSize:
-            "20px",
-          color:
-            "#31564A"
-        }
-      )
-      .setOrigin(0.5);
-
-    if (isFinal) {
+    if (final) {
       this.add
         .text(
-          GAME_WIDTH / 2,
-          460,
-          `⏱️ Tempo total: ${GameMetrics.formatTime(
-            metrics.totalTimeSeconds
-          )}`,
+          640,
+          375,
+          `⏱️ Tempo total da expedição: ${
+            GameMetrics.formatTime(
+              metrics.totalTimeSeconds ||
+              GameMetrics.getCurrentTime()
+            )
+          }`,
           {
-            fontFamily:
-              "Arial",
-            fontSize:
-              "21px",
-            fontStyle:
-              "bold",
-            color:
-              "#07543D"
+            fontFamily: "Arial",
+            fontSize: "19px",
+            fontStyle: "bold",
+            color: "#31564a"
           }
         )
         .setOrigin(0.5);
     }
 
-    const continueButton =
-      this.add
-        .rectangle(
-          GAME_WIDTH / 2,
-          isFinal
-            ? 535
-            : 500,
-          420,
-          65,
-          COLORS.forest
-        )
-        .setStrokeStyle(
-          4,
-          COLORS.white
-        )
-        .setInteractive({
-          useHandCursor: true
-        });
+    const primaryY =
+      final
+        ? 475
+        : 450;
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        isFinal
-          ? 535
-          : 500,
-        isFinal
-          ? "🏆 FINALIZAR JOGO"
-          : `CONTINUAR PARA A FASE ${nextPhase} →`,
-        {
-          fontFamily:
-            "Arial",
-          fontSize:
-            "20px",
-          fontStyle:
-            "bold",
-          color:
-            "#FFFFFF",
-          align:
-            "center"
-        }
-      )
-      .setOrigin(0.5);
-
-    const menuButton =
-      this.add
-        .rectangle(
-          GAME_WIDTH / 2,
-          isFinal
-            ? 615
-            : 575,
-          360,
-          55,
-          0xD89B3C
-        )
-        .setStrokeStyle(
-          3,
-          0x9A6A21
-        )
-        .setInteractive({
-          useHandCursor: true
-        });
-
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        isFinal
-          ? 615
-          : 575,
-        "🏠 VOLTAR AO MENU",
-        {
-          fontFamily:
-            "Arial",
-          fontSize:
-            "19px",
-          fontStyle:
-            "bold",
-          color:
-            "#FFFFFF"
-        }
-      )
-      .setOrigin(0.5);
-
-    continueButton.on(
-      "pointerdown",
-      async () => {
-        if (isFinal) {
-          await this.finishGame();
+    this.createButton(
+      640,
+      primaryY,
+      430,
+      60,
+      final
+        ? "🏆 FINALIZAR JOGO"
+        : `➡️ CONTINUAR PARA A FASE ${nextPhase}`,
+      COLORS.forest,
+      () => {
+        if (final) {
+          this.finishGame();
         } else {
           this.scene.start(
             `Phase${nextPhase}Scene`
@@ -282,46 +187,311 @@ export class VictoryScene extends Phaser.Scene {
       }
     );
 
-    menuButton.on(
-      "pointerdown",
-      () =>
+    this.pdfButton =
+      this.createButton(
+        640,
+        primaryY + 72,
+        430,
+        52,
+        "📄 GERAR RELATÓRIO EM PDF",
+        COLORS.orange,
+        () => {
+          this.downloadPdf();
+        }
+      );
+
+    this.createButton(
+      640,
+      primaryY + 136,
+      430,
+      52,
+      "🏠 VOLTAR AO MENU",
+      COLORS.orange,
+      () => {
         this.scene.start(
           "MenuScene"
-        )
+        );
+      }
     );
 
-    AudioManager.speak(
-      isFinal
-        ? `Parabéns! Você completou toda a expedição com ${state.score} pontos.`
-        : `Muito bem! Você concluiu a Fase ${phase}. Agora vamos para a próxima fase.`
+    if (
+      AccessibilityManager.isNarrationEnabled()
+    ) {
+      AudioManager.speak(
+        final
+          ? `Parabéns! Você terminou toda a expedição com ${state.score} pontos.`
+          : `Parabéns! Você concluiu a Fase ${phase}. Agora vamos para a próxima fase.`
+      );
+    }
+  }
+
+  drawBackground() {
+    this.cameras.main.setBackgroundColor(
+      COLORS.sky
+    );
+
+    const g =
+      this.add.graphics();
+
+    g.fillStyle(
+      COLORS.sky,
+      1
+    );
+
+    g.fillRect(
+      0,
+      0,
+      GAME_WIDTH,
+      GAME_HEIGHT
+    );
+
+    g.fillStyle(
+      COLORS.map,
+      1
+    );
+
+    g.fillCircle(
+      80,
+      700,
+      230
+    );
+
+    g.fillCircle(
+      1200,
+      700,
+      260
+    );
+
+    g.fillStyle(
+      COLORS.leaf,
+      1
+    );
+
+    for (
+      let i = 0;
+      i < 14;
+      i += 1
+    ) {
+      g.fillCircle(
+        40 + i * 95,
+        700,
+        38
+      );
+    }
+  }
+
+  createButton(
+    x,
+    y,
+    width,
+    height,
+    label,
+    color,
+    callback
+  ) {
+    const shadow =
+      this.add.rectangle(
+        x + 5,
+        y + 6,
+        width,
+        height,
+        0x000000,
+        0.12
+      );
+
+    const button =
+      this.add
+        .rectangle(
+          x,
+          y,
+          width,
+          height,
+          color
+        )
+        .setStrokeStyle(
+          3,
+          COLORS.white
+        )
+        .setInteractive({
+          useHandCursor: true
+        });
+
+    const text =
+      this.add
+        .text(
+          x,
+          y,
+          label,
+          {
+            fontFamily: "Arial",
+            fontSize:
+              height > 58
+                ? "20px"
+                : "17px",
+            fontStyle: "bold",
+            color: "#ffffff",
+            align: "center"
+          }
+        )
+        .setOrigin(0.5);
+
+    button.on(
+      "pointerover",
+      () => {
+        button.setScale(1.03);
+        text.setScale(1.03);
+        shadow.setScale(1.03);
+      }
+    );
+
+    button.on(
+      "pointerout",
+      () => {
+        button.setScale(1);
+        text.setScale(1);
+        shadow.setScale(1);
+      }
+    );
+
+    button.on(
+      "pointerdown",
+      callback
+    );
+
+    return {
+      button,
+      text,
+      shadow
+    };
+  }
+
+  async downloadPdf() {
+    if (this.pdfLoading) {
+      return;
+    }
+
+    const playerId =
+      GameState.get().playerId;
+
+    if (
+      !playerId ||
+      String(playerId).startsWith(
+        "local-"
+      )
+    ) {
+      this.showPdfMessage(
+        "O relatório em PDF precisa que o jogo esteja conectado ao backend."
+      );
+
+      return;
+    }
+
+    this.pdfLoading = true;
+
+    if (this.pdfButton?.text) {
+      this.pdfButton.text.setText(
+        "⏳ GERANDO RELATÓRIO..."
+      );
+    }
+
+    try {
+      await ApiService.downloadPerformancePdf(
+        playerId
+      );
+
+      this.showPdfMessage(
+        "Relatório gerado com sucesso!"
+      );
+
+      if (
+        AccessibilityManager.isNarrationEnabled()
+      ) {
+        AudioManager.speak(
+          "Seu relatório de desempenho foi gerado com sucesso."
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Erro ao gerar relatório PDF:",
+        error
+      );
+
+      this.showPdfMessage(
+        error?.message ||
+        "Não foi possível gerar o relatório agora."
+      );
+    } finally {
+      this.pdfLoading = false;
+
+      if (this.pdfButton?.text) {
+        this.pdfButton.text.setText(
+          "📄 GERAR RELATÓRIO EM PDF"
+        );
+      }
+    }
+  }
+
+  showPdfMessage(message) {
+    if (this.pdfMessage) {
+      this.pdfMessage.destroy();
+    }
+
+    this.pdfMessage =
+      this.add
+        .text(
+          640,
+          695,
+          message,
+          {
+            fontFamily: "Arial",
+            fontSize: "15px",
+            fontStyle: "bold",
+            color: "#18332c",
+            align: "center",
+            wordWrap: {
+              width: 800
+            }
+          }
+        )
+        .setOrigin(0.5);
+
+    this.time.delayedCall(
+      3500,
+      () => {
+        if (
+          this.pdfMessage
+        ) {
+          this.pdfMessage.destroy();
+          this.pdfMessage = null;
+        }
+      }
     );
   }
 
   async finishGame() {
     GameMetrics.completeGame();
 
-    const state =
-      GameState.get();
-
-    ProgressManager.save();
+    const profile =
+      ProgressManager.save();
 
     try {
-      await ApiService.saveProgress(
-        {
-          ...state,
-          metrics:
-            GameMetrics.get()
-        }
-      );
+      await ApiService.saveProgress({
+        ...GameState.get(),
+        metrics:
+          GameMetrics.get()
+      });
     } catch (error) {
       console.warn(
-        "Não foi possível sincronizar o resultado final.",
+        "Não foi possível sincronizar o encerramento.",
         error
       );
     }
 
     this.scene.start(
-      "RankingScene"
+      "RankingScene",
+      {
+        final: true
+      }
     );
   }
 }

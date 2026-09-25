@@ -1,88 +1,222 @@
 import { GameState } from "./GameState.js";
 
 let voices = [];
-let voicesReady = false;
 
 function loadVoices() {
   if (!("speechSynthesis" in window)) return;
-  voices = window.speechSynthesis.getVoices();
-  voicesReady = voices.length > 0;
+
+  voices =
+    window.speechSynthesis.getVoices();
 }
 
 if ("speechSynthesis" in window) {
   loadVoices();
-  window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+
+  window.speechSynthesis.addEventListener(
+    "voiceschanged",
+    loadVoices
+  );
 }
 
 function choosePortugueseVoice() {
-  if (!voices.length) return null;
+  const ptBr =
+    voices.filter(
+      voice =>
+        /^pt-BR$/i.test(voice.lang) ||
+        /^pt_BR$/i.test(voice.lang)
+    );
 
-  const ptBr = voices.filter((voice) =>
-    /^pt-BR$/i.test(voice.lang) || /^pt_BR$/i.test(voice.lang)
-  );
+  const portuguese =
+    ptBr.length
+      ? ptBr
+      : voices.filter(
+          voice =>
+            /^pt/i.test(voice.lang)
+        );
 
-  const pool = ptBr.length
-    ? ptBr
-    : voices.filter((voice) => /^pt/i.test(voice.lang));
+  if (!portuguese.length) {
+    return null;
+  }
 
-  if (!pool.length) return null;
-
-  // Prioriza vozes femininas/naturais quando o sistema operacional oferecer.
   const preferred = [
-    "francisca",
-    "maria",
-    "fernanda",
-    "camila",
-    "helena",
-    "female",
-    "natural",
-    "google português",
-    "google portuguese"
+    "Microsoft Francisca",
+    "Microsoft Maria",
+    "Microsoft Antonio",
+    "Microsoft Daniel",
+    "Google português",
+    "Google Portuguese",
+    "Francisca",
+    "Maria",
+    "Fernanda",
+    "Camila",
+    "Helena",
+    "Natural"
   ];
 
   return (
-    pool.find((voice) => {
-      const name = voice.name.toLowerCase();
-      return preferred.some((term) => name.includes(term));
-    }) || pool[0]
+    portuguese.find(
+      voice =>
+        preferred.some(
+          name =>
+            voice.name
+              .toLowerCase()
+              .includes(
+                name.toLowerCase()
+              )
+        )
+    ) ||
+    portuguese.find(
+      voice => voice.localService
+    ) ||
+    portuguese[0]
+  );
+}
+
+function clamp(value, min = 0, max = 1) {
+  return Math.max(
+    min,
+    Math.min(max, Number(value) || 0)
   );
 }
 
 export const AudioManager = {
   speak(text, options = {}) {
-    if (!("speechSynthesis" in window)) return;
-    if (GameState.get().accessibility?.narration === false) return;
+    if (!("speechSynthesis" in window)) {
+      return;
+    }
+
+    const settings =
+      GameState.get().accessibility || {};
+
+    if (
+      settings.narration === false
+    ) {
+      return;
+    }
 
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance =
+      new SpeechSynthesisUtterance(
+        String(text)
+      );
+
     utterance.lang = "pt-BR";
-    utterance.rate = options.rate ?? 0.86;
-    utterance.pitch = options.pitch ?? 1.22;
-    utterance.volume = options.volume ?? 1;
+
+    utterance.rate =
+      options.rate ??
+      settings.narrationRate ??
+      0.9;
+
+    utterance.pitch =
+      options.pitch ?? 1.28;
+
+    utterance.volume =
+      options.volume ??
+      settings.narrationVolume ??
+      1;
 
     const speakNow = () => {
       loadVoices();
-      const voice = choosePortugueseVoice();
-      if (voice) utterance.voice = voice;
-      window.speechSynthesis.speak(utterance);
+
+      const voice =
+        choosePortugueseVoice();
+
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      window.speechSynthesis.speak(
+        utterance
+      );
     };
 
-    // Alguns navegadores só populam as vozes depois do primeiro evento.
-    if (!voicesReady) {
-      loadVoices();
-    }
-
-    window.setTimeout(speakNow, 30);
+    window.setTimeout(
+      speakNow,
+      40
+    );
   },
 
   stop() {
-    if ("speechSynthesis" in window) {
+    if (
+      "speechSynthesis" in window
+    ) {
       window.speechSynthesis.cancel();
     }
   },
 
+  setNarrationRate(rate) {
+    GameState.setAccessibility({
+      narrationRate: clamp(
+        rate,
+        0.5,
+        1.5
+      )
+    });
+  },
+
+  getNarrationRate() {
+    return (
+      GameState.get()
+        .accessibility
+        ?.narrationRate ?? 0.9
+    );
+  },
+
+  setNarrationVolume(volume) {
+    GameState.setAccessibility({
+      narrationVolume:
+        clamp(volume)
+    });
+  },
+
+  getNarrationVolume() {
+    return (
+      GameState.get()
+        .accessibility
+        ?.narrationVolume ?? 1
+    );
+  },
+
+  setEffectsVolume(volume) {
+    GameState.setAccessibility({
+      effectsVolume:
+        clamp(volume)
+    });
+  },
+
+  getEffectsVolume() {
+    return (
+      GameState.get()
+        .accessibility
+        ?.effectsVolume ?? 1
+    );
+  },
+
+  playEffect(src) {
+    if (!src) return;
+
+    const audio =
+      new Audio(src);
+
+    audio.volume =
+      this.getEffectsVolume();
+
+    audio.play().catch(
+      error => {
+        console.warn(
+          "Não foi possível reproduzir efeito:",
+          error
+        );
+      }
+    );
+
+    return audio;
+  },
+
   getAvailableVoices() {
+    loadVoices();
+
     return [...voices];
   }
 };

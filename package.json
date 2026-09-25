@@ -1,7 +1,6 @@
 {
   "name": "rota-brasil-frontend",
   "version": "0.1.0",
-  "private": true,
   "description": "Frontend do jogo educativo Rota Brasil: A Expedição de Aê",
   "type": "module",
   "scripts": {
@@ -9,6 +8,14 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "keywords": [
+    "rota-brasil",
+    "phaser",
+    "educacao",
+    "geografia"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "phaser": "^3.90.0"
   },

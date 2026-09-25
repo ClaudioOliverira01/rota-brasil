@@ -1,1 +1,25 @@
 @import "../styles/global.css";
+
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/assets/fonts/OpenDyslexic-Regular.woff2")
+    format("woff2");
+
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.dyslexia-font {
+  font-family:
+    "OpenDyslexic",
+    Arial,
+    sans-serif !important;
+}
+
+.dyslexia-font * {
+  font-family:
+    "OpenDyslexic",
+    Arial,
+    sans-serif !important;
+}

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { COLORS, GAME_HEIGHT, GAME_WIDTH } from "../config/gameConfig.js";
+import { AccessibilityManager } from "../systems/AccessibilityManager.js";
+import { GameState } from "../systems/GameState.js";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,27 +8,40 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor(COLORS.skyLight);
+    /*
+     * Carrega as configurações de acessibilidade
+     * antes que qualquer outra cena seja apresentada.
+     */
+    const accessibility =
+      AccessibilityManager.load();
 
-    const { width, height } = this.scale;
+    /*
+     * Garante que o GameState utilize imediatamente
+     * as configurações carregadas.
+     */
+    GameState.setAccessibility(
+      accessibility
+    );
 
-    this.add
-      .text(width / 2, height / 2 - 25, "ROTA BRASIL", {
-        fontFamily: "Arial",
-        fontSize: "46px",
-        fontStyle: "bold",
-        color: "#0b6e4f"
-      })
-      .setOrigin(0.5);
+    /*
+     * Disponibiliza as configurações no Registry
+     * do Phaser para as demais cenas.
+     */
+    this.registry.set(
+      "accessibility",
+      accessibility
+    );
 
-    this.add
-      .text(width / 2, height / 2 + 30, "A Expedição de Aê", {
-        fontFamily: "Arial",
-        fontSize: "24px",
-        color: "#18332c"
-      })
-      .setOrigin(0.5);
+    /*
+     * Pequena configuração visual inicial.
+     */
+    this.cameras.main.setBackgroundColor(
+      "#dff6ee"
+    );
 
-    this.time.delayedCall(500, () => this.scene.start("PreloadScene"));
+    /*
+     * Segue normalmente para o carregamento.
+     */
+    this.scene.start("PreloadScene");
   }
 }

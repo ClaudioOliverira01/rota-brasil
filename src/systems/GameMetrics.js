@@ -62,6 +62,14 @@ export const GameMetrics = {
         this.save();
     },
 
+    /*
+     * Cada vez que uma fase começa é uma NOVA tentativa.
+     *
+     * Por isso os contadores (erros, tentativas, pontos e tempo)
+     * são zerados aqui. Assim, o que a fase envia ao backend e o que
+     * a tela de vitória mostra é sempre o desta partida, e não a soma
+     * de todas as vezes que o jogador já jogou a fase.
+     */
     startPhase(phase) {
 
         const now =
@@ -70,13 +78,22 @@ export const GameMetrics = {
         metrics.currentPhaseStartedAt =
             now;
 
-        this.ensurePhase(phase);
+        metrics.phases[phase] = {
 
-        metrics.phases[phase].startedAt =
-            now;
+            errors: 0,
 
-        metrics.phases[phase].completedAt =
-            null;
+            attempts: 0,
+
+            timeSeconds: 0,
+
+            score: 0,
+
+            startedAt:
+                now,
+
+            completedAt:
+                null
+        };
 
         this.save();
     },
@@ -249,6 +266,35 @@ export const GameMetrics = {
             errors:
                 phases[0][1].errors
         };
+    },
+
+    /*
+     * Estrelas de uma fase, pela quantidade de erros:
+     *   0 erros  -> 3 estrelas
+     *   1 a 2    -> 2 estrelas
+     *   3 ou mais -> 1 estrela
+     *
+     * É a mesma regra que a Fase 2 já usava.
+     */
+    starsForErrors(errors) {
+
+        const total =
+            Math.max(
+                0,
+                Number(errors) || 0
+            );
+
+        if (total === 0) {
+
+            return 3;
+        }
+
+        if (total <= 2) {
+
+            return 2;
+        }
+
+        return 1;
     },
 
     formatTime(seconds) {

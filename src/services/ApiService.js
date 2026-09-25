@@ -1,461 +1,272 @@
 const API_BASE_URL = (
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:3333"
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api"
 ).replace(/\/$/, "");
 
 const USE_MOCK =
-    String(
-        import.meta.env.VITE_USE_MOCK ?? "false"
-    ) === "true";
+  String(import.meta.env.VITE_USE_MOCK ?? "false") === "true";
 
 const API_TIMEOUT = Number(
-    import.meta.env.VITE_API_TIMEOUT || 8000
+  import.meta.env.VITE_API_TIMEOUT || 8000
 );
 
-// =========================================================
-// EVENTOS DA API
-// =========================================================
-
-function dispatchApiEvent(type, detail = {}) {
-
-    window.dispatchEvent(
-        new CustomEvent(
-            `rota-brasil:api:${type}`,
-            {
-                detail
-            }
-        )
-    );
-}
-
-// =========================================================
-// REQUEST
-// =========================================================
-
 async function request(path, options = {}) {
+  const controller = new AbortController();
 
-    const controller =
-        new AbortController();
+  const timeoutId = window.setTimeout(
+    () => controller.abort(),
+    API_TIMEOUT
+  );
 
-    const timeout =
-        setTimeout(
-            () => controller.abort(),
-            API_TIMEOUT
-        );
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        ...(options.body
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...(options.headers || {})
+      }
+    });
 
-    try {
+    const contentType =
+      response.headers.get("content-type") || "";
 
-        const response =
-            await fetch(
-                `${API_BASE_URL}${path}`,
-                {
-                    ...options,
+    const payload =
+      response.status === 204
+        ? null
+        : contentType.includes("application/json")
+          ? await response.json()
+          : await response.text();
 
-                    headers: {
-                        "Content-Type":
-                            "application/json",
+    if (!response.ok) {
+      const error = new Error(
+        payload?.error ||
+        payload?.mensagem ||
+        `API ${response.status}: ${response.statusText}`
+      );
 
-                        ...(options.headers || {})
-                    },
+      error.status = response.status;
+      error.payload = payload;
 
-                    signal:
-                        controller.signal
-                }
-            );
-
-        let payload = null;
-
-        try {
-
-            payload =
-                await response.json();
-
-        } catch {
-
-            payload = null;
-        }
-
-        if (!response.ok) {
-
-            const errorMessage =
-                payload?.mensagem ||
-                payload?.erro ||
-                payload?.error ||
-                `Erro HTTP ${response.status}`;
-
-            console.error(
-                "[ApiService] Erro na requisição:",
-                path,
-                "status:",
-                response.status,
-                "payload:",
-                payload
-            );
-
-            const error =
-                new Error(errorMessage);
-
-            error.status =
-                response.status;
-
-            error.payload =
-                payload;
-
-            throw error;
-        }
-
-        dispatchApiEvent(
-            "success",
-            {
-                path,
-                payload
-            }
-        );
-
-        return payload;
-
-    } catch (error) {
-
-        dispatchApiEvent(
-            "error",
-            {
-                path,
-                error
-            }
-        );
-
-        throw error;
-
-    } finally {
-
-        clearTimeout(timeout);
+      throw error;
     }
+
+    return payload;
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error(
+        "A API demorou para responder. Verifique se o backend está ligado."
+      );
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
-// =========================================================
-// MOCK
-// =========================================================
+async function requestBlob(path, options = {}) {
+  const controller = new AbortController();
 
-function mockPlayer(payload) {
+  const timeoutId = window.setTimeout(
+    () => controller.abort(),
+    API_TIMEOUT
+  );
 
-    return {
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        Accept: "application/pdf",
+        ...(options.body
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...(options.headers || {})
+      }
+    });
 
-        id:
-            `mock-${Date.now()}`,
+    if (!response.ok) {
+      let message = `API ${response.status}: ${response.statusText}`;
 
-        nickname:
-            payload.nickname,
+      try {
+        const contentType =
+          response.headers.get("content-type") || "";
 
-        avatar:
-            payload.avatar || "ae"
-    };
+        if (contentType.includes("application/json")) {
+          const payload = await response.json();
+          message =
+            payload?.error ||
+            payload?.mensagem ||
+            message;
+        }
+      } catch {
+        // Mantém a mensagem padrão.
+      }
+
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
+    }
+
+    return await response.blob();
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error(
+        "A geração do relatório demorou para responder."
+      );
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
-
-// =========================================================
-// API SERVICE
-// =========================================================
 
 export const ApiService = {
-
-    // =====================================================
-    // CONFIGURAÇÃO
-    // =====================================================
-
-    get baseUrl() {
-
-        return API_BASE_URL;
-    },
-
-    isMockEnabled() {
-
-        return USE_MOCK;
-    },
-
-    // =====================================================
-    // SAÚDE DA API
-    // =====================================================
-
-    async health() {
-
-        if (USE_MOCK) {
-
-            return {
-                mensagem:
-                    "API funcionando em modo mock."
-            };
-        }
-
-        return request("/health");
-    },
-
-    // =====================================================
-    // JOGADORES
-    // =====================================================
-
-    async createPlayer(payload) {
-
-        if (USE_MOCK) {
-
-            return mockPlayer(payload);
-        }
-
-        const response =
-            await request(
-                "/players",
-                {
-                    method: "POST",
-
-                    body:
-                        JSON.stringify({
-                            nickname:
-                                payload.nickname,
-
-                            avatar:
-                                payload.avatar || "ae"
-                        })
-                }
-            );
-
-        // O backend retorna:
-        //
-        // {
-        //   mensagem: "...",
-        //   jogador: {...}
-        // }
-
-        return response;
-    },
-
-    async getPlayerByNickname(nickname) {
-
-        if (!nickname) {
-
-            return null;
-        }
-
-        if (USE_MOCK) {
-
-            return null;
-        }
-
-        return request(
-            `/players/by-nickname/${encodeURIComponent(
-                nickname
-            )}`
-        );
-    },
-
-    async getPlayer(playerId) {
-
-        if (!playerId) {
-
-            return null;
-        }
-
-        if (USE_MOCK) {
-
-            return null;
-        }
-
-        return request(
-            `/players/${encodeURIComponent(
-                playerId
-            )}`
-        );
-    },
-
-    // =====================================================
-    // PROGRESSO
-    // =====================================================
-
-    async getProgress(playerId) {
-
-        if (!playerId) {
-
-            return null;
-        }
-
-        if (USE_MOCK) {
-
-            return null;
-        }
-
-        const response =
-            await request(
-                `/players/${encodeURIComponent(
-                    playerId
-                )}/progress`
-            );
-
-        return response;
-    },
-
-    async saveProgress(payload) {
-
-        if (USE_MOCK) {
-
-            return {
-                progresso:
-                    payload
-            };
-        }
-
-        return request(
-            "/progress",
-            {
-                method: "POST",
-
-                body:
-                    JSON.stringify({
-                        playerId:
-                            payload.playerId,
-
-                        currentPhase:
-                            payload.currentPhase ??
-                            payload.current_phase ??
-                            1,
-
-                        score:
-                            Number(
-                                payload.score || 0
-                            ),
-
-                        stars:
-                            Number(
-                                payload.stars || 0
-                            )
-                    })
-            }
-        );
-    },
-
-    // =====================================================
-    // RESULTADO DAS FASES
-    // =====================================================
-
-    async savePhaseResult(payload) {
-
-        if (USE_MOCK) {
-
-            return {
-                resultado:
-                    payload
-            };
-        }
-
-        console.log(
-            "[ApiService] Enviando resultado:",
-            payload
-        );
-
-        return request(
-            "/progress/phases",
-            {
-                method: "POST",
-
-                body:
-                    JSON.stringify({
-                        playerId:
-                            payload.playerId,
-
-                        phase:
-                            Number(
-                                payload.phase || 1
-                            ),
-
-                        score:
-                            Number(
-                                payload.score || 0
-                            ),
-
-                        stars:
-                            Number(
-                                payload.stars || 0
-                            ),
-
-                        completed:
-                            Boolean(
-                                payload.completed
-                            ),
-
-                        timeSeconds:
-                            payload.timeSeconds !==
-                            undefined &&
-                            payload.timeSeconds !== null
-                                ? Number(
-                                    payload.timeSeconds
-                                )
-                                : null
-                    })
-            }
-        );
-    },
-
-    async getPhaseResults(playerId) {
-
-        if (!playerId) {
-
-            return null;
-        }
-
-        if (USE_MOCK) {
-
-            return {
-
-                mensagem:
-                    "Resultados encontrados.",
-
-                resultados:
-                    []
-            };
-        }
-
-        return request(
-            `/players/${encodeURIComponent(
-                playerId
-            )}/phases`
-        );
-    },
-
-    // =====================================================
-    // RANKING
-    // =====================================================
-
-    async getRanking(limit = 10) {
-
-        if (USE_MOCK) {
-
-            return [];
-        }
-
-        return request(
-            `/ranking?limit=${Math.max(
-                1,
-                Number(limit) || 10
-            )}`
-        );
-    },
-
-    // =====================================================
-    // ESTATÍSTICAS
-    // =====================================================
-
-    async getPhaseStats() {
-
-        if (USE_MOCK) {
-
-            return {
-
-                phases:
-                    [],
-
-                phaseWithMostErrors:
-                    null
-            };
-        }
-
-        return request(
-            "/stats/phases"
-        );
+  get baseUrl() {
+    return API_BASE_URL;
+  },
+
+  isMockEnabled() {
+    return USE_MOCK;
+  },
+
+  async health() {
+    return request("/health");
+  },
+
+  async createPlayer(payload) {
+    if (USE_MOCK) {
+      return {
+        id: `mock-${Date.now()}`,
+        ...payload
+      };
     }
+
+    return request("/players", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async getPlayerByNickname(nickname) {
+    if (USE_MOCK) {
+      return null;
+    }
+
+    return request(
+      `/players/by-nickname/${encodeURIComponent(nickname)}`
+    );
+  },
+
+  async getProgress(playerId) {
+    if (USE_MOCK) {
+      return {
+        playerId,
+        currentPhase: 1,
+        score: 0,
+        stars: 0,
+        completedPhases: [],
+        accessibility: {
+          narration: true,
+          highContrast: false,
+          reducedMotion: false
+        },
+        gameStartedAt: null,
+        gameCompletedAt: null,
+        totalTimeSeconds: 0
+      };
+    }
+
+    return request(
+      `/players/${encodeURIComponent(playerId)}/progress`
+    );
+  },
+
+  async saveProgress(payload) {
+    if (USE_MOCK) {
+      return payload;
+    }
+
+    return request("/progress", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async savePhaseResult(payload) {
+    if (USE_MOCK) {
+      return payload;
+    }
+
+    return request("/progress/phases", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async getRanking(limit = 10) {
+    if (USE_MOCK) {
+      return [];
+    }
+
+    return request(
+      `/ranking?limit=${Math.max(
+        1,
+        Math.min(50, Number(limit) || 10)
+      )}`
+    );
+  },
+
+  async getPhaseStats() {
+    if (USE_MOCK) {
+      return {
+        phases: [],
+        mostErrorsPhase: null
+      };
+    }
+
+    return request("/stats/phases");
+  },
+
+  /*
+   * Gera e baixa o relatório de desempenho em PDF.
+   */
+  async downloadPerformancePdf(playerId) {
+    if (!playerId) {
+      throw new Error(
+        "Não foi possível identificar o jogador."
+      );
+    }
+
+    if (USE_MOCK) {
+      throw new Error(
+        "O relatório em PDF exige conexão com o backend."
+      );
+    }
+
+    const blob = await requestBlob(
+      `/reports/${encodeURIComponent(playerId)}/pdf`
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "relatorio-rota-brasil.pdf";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+
+    return true;
+  }
 };
