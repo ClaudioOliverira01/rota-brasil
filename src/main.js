@@ -18,6 +18,7 @@ import { Phase3Scene } from "./scenes/Phase3Scene.js";
 import { Phase4Scene } from "./scenes/Phase4Scene.js";
 import { BonusScene } from "./scenes/BonusScene.js";
 import { VictoryScene } from "./scenes/VictoryScene.js";
+import { CompassTransitionScene } from "./scenes/CompassTransitionScene.js";
 import { RankingScene } from "./scenes/RankingScene.js";
 import { AccessibilityManager } from "./systems/AccessibilityManager.js";
 
@@ -93,7 +94,9 @@ const config = {
     Phase4Scene,
 
     BonusScene,
-    
+
+    CompassTransitionScene,
+
     VictoryScene,
 
     RankingScene

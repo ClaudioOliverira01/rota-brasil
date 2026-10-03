@@ -149,6 +149,12 @@ export const ProgressManager = {
             ]
           : [],
 
+      bonusCompleted:
+        Boolean(state.bonusCompleted),
+
+      bonusSeal:
+        state.bonusSeal || null,
+
       accessibility: {
 
         narration:

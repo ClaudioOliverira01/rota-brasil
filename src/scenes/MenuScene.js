@@ -428,7 +428,7 @@ export class MenuScene extends Phaser.Scene {
       this.handleKeyboardActivate,
       this
     );
-
+    
     this.input.keyboard.on(
       "keydown-ESC",
       this.handleKeyboardEscape,
@@ -624,58 +624,358 @@ export class MenuScene extends Phaser.Scene {
   }
 
   showAccessibility() {
+    this.closeModal();
+
     const accessibility =
       GameState.get().accessibility;
 
-    this.showModal({
-      title: "ACESSIBILIDADE",
+    const container =
+      this.add
+        .container(
+          640,
+          360
+        )
+        .setDepth(1000);
 
-      lines: [
-        "Recursos disponíveis nesta versão:",
-        "",
-        `🔊 Narração: ${
-          accessibility.narration
-            ? "ATIVADA"
-            : "DESATIVADA"
-        }`,
-        `👁️ Alto contraste: ${
-          accessibility.highContrast
-            ? "ATIVADO"
-            : "DESATIVADO"
-        }`,
-        `🎬 Menos movimento: ${
-          accessibility.reducedMotion
-            ? "ATIVADO"
-            : "DESATIVADO"
-        }`,
-        `📖 Fonte para dislexia: ${
-          accessibility.dyslexiaFont
-            ? "ATIVADA"
-            : "DESATIVADA"
-        }`,
-        "",
-        "Escolha os recursos desejados."
-      ],
+    this.modal =
+      container;
 
-      buttonLabel: "NARRAÇÃO",
+    const dim =
+      this.add
+        .rectangle(
+          0,
+          0,
+          GAME_WIDTH,
+          GAME_HEIGHT,
+          0x09271e,
+          0.62
+        )
+        .setOrigin(0.5)
+        .setInteractive();
 
-      onButton: () => {
-        const enabled =
-          AccessibilityManager.toggleNarration();
+    const panel =
+      this.add.graphics();
 
-        if (!enabled) {
-          AudioManager.stop();
+    panel.fillStyle(
+      COLORS.cream,
+      1
+    );
+
+    panel.fillRoundedRect(
+      -380,
+      -240,
+      760,
+      480,
+      36
+    );
+
+    panel.lineStyle(
+      5,
+      COLORS.forest,
+      1
+    );
+
+    panel.strokeRoundedRect(
+      -380,
+      -240,
+      760,
+      480,
+      36
+    );
+
+    const titleBackground =
+      this.add.graphics();
+
+    titleBackground.fillStyle(
+      COLORS.forest,
+      1
+    );
+
+    titleBackground.fillRoundedRect(
+      -200,
+      -285,
+      400,
+      68,
+      24
+    );
+
+    titleBackground.lineStyle(
+      4,
+      COLORS.white,
+      1
+    );
+
+    titleBackground.strokeRoundedRect(
+      -200,
+      -285,
+      400,
+      68,
+      24
+    );
+
+    const titleText =
+      this.add
+        .text(
+          0,
+          -251,
+          "ACESSIBILIDADE",
+          {
+            fontFamily: "Arial",
+            fontSize: "30px",
+            fontStyle: "bold",
+            color: "#ffffff",
+            align: "center"
+          }
+        )
+        .setOrigin(0.5);
+
+    const intro =
+      this.add
+        .text(
+          0,
+          -202,
+          "Toque em um recurso para ativar ou desativar:",
+          {
+            fontFamily: "Arial",
+            fontSize: "18px",
+            fontStyle: "bold",
+            color: "#18332c",
+            align: "center",
+            wordWrap: {
+              width: 660
+            }
+          }
+        )
+        .setOrigin(0.5);
+
+    container.add([
+      dim,
+      panel,
+      titleBackground,
+      titleText,
+      intro
+    ]);
+
+    /*
+     * Cada item representa um recurso de acessibilidade.
+     * "enabled" vem do estado atual salvo, "onLabel"/"offLabel"
+     * respeitam a concordância de gênero de cada palavra
+     * ("ATIVADA/DESATIVADA" para Narração e Fonte, e
+     * "ATIVADO/DESATIVADO" para Contraste e Movimento).
+     */
+    const toggles = [
+      {
+        icon: "🔊",
+        label: "Narração",
+        enabled: accessibility.narration,
+        onLabel: "ATIVADA",
+        offLabel: "DESATIVADA",
+        toggle: () => {
+          const enabled =
+            AccessibilityManager.toggleNarration();
+
+          if (!enabled) {
+            AudioManager.stop();
+          }
         }
-
-        this.showAccessibility();
       },
+      {
+        icon: "👁️",
+        label: "Alto contraste",
+        enabled: accessibility.highContrast,
+        onLabel: "ATIVADO",
+        offLabel: "DESATIVADO",
+        toggle: () => {
+          AccessibilityManager.toggleHighContrast();
+        }
+      },
+      {
+        icon: "🎬",
+        label: "Menos movimento",
+        enabled: accessibility.reducedMotion,
+        onLabel: "ATIVADO",
+        offLabel: "DESATIVADO",
+        toggle: () => {
+          AccessibilityManager.toggleReducedMotion();
+        }
+      },
+      {
+        icon: "📖",
+        label: "Fonte para dislexia",
+        enabled: accessibility.dyslexiaFont,
+        onLabel: "ATIVADA",
+        offLabel: "DESATIVADA",
+        toggle: () => {
+          AccessibilityManager.toggleDyslexiaFont();
+        }
+      }
+    ];
 
-      secondaryLabel: "VOLTAR",
+    const rowWidth = 620;
+    const rowHeight = 56;
+    const rowGap = 14;
+    const startY = -150;
 
-      onSecondary: () => {
+    toggles.forEach(
+      (item, index) => {
+        const y =
+          startY +
+          index * (rowHeight + rowGap);
+
+        const row =
+          this.add.graphics();
+
+        row.fillStyle(
+          item.enabled
+            ? COLORS.forest
+            : COLORS.white,
+          1
+        );
+
+        row.fillRoundedRect(
+          -rowWidth / 2,
+          y - rowHeight / 2,
+          rowWidth,
+          rowHeight,
+          18
+        );
+
+        row.lineStyle(
+          3,
+          item.enabled
+            ? COLORS.white
+            : COLORS.forest,
+          0.9
+        );
+
+        row.strokeRoundedRect(
+          -rowWidth / 2,
+          y - rowHeight / 2,
+          rowWidth,
+          rowHeight,
+          18
+        );
+
+        row.setInteractive(
+          new Phaser.Geom.Rectangle(
+                        -rowWidth / 2,
+            y - rowHeight / 2,
+            rowWidth,
+            rowHeight
+          ),
+          Phaser.Geom.Rectangle.Contains,
+          {
+            useHandCursor: true
+          }
+        );
+
+        const text =
+          this.add
+            .text(
+              0,
+              y,
+              `${item.icon}  ${item.label}: ${
+                item.enabled
+                  ? item.onLabel
+                  : item.offLabel
+              }`,
+              {
+                fontFamily: "Arial",
+                fontSize: "19px",
+                fontStyle: "bold",
+                color: item.enabled
+                  ? "#ffffff"
+                  : "#0b6e4f",
+                align: "center"
+              }
+            )
+            .setOrigin(0.5);
+
+        container.add([
+          row,
+          text
+        ]);
+
+        row.on(
+          "pointerover",
+          () => {
+            row.setAlpha(0.85);
+          }
+        );
+
+        row.on(
+          "pointerout",
+          () => {
+            row.setAlpha(1);
+          }
+        );
+
+        row.on(
+          "pointerdown",
+          () => {
+            item.toggle();
+
+            this.showAccessibility();
+          }
+        );
+      }
+    );
+
+    const backY =
+      startY +
+      toggles.length * (rowHeight + rowGap) +
+      18;
+
+    const back =
+      this.add
+        .text(
+          0,
+          backY,
+          "VOLTAR",
+          {
+            fontFamily: "Arial",
+            fontSize: "20px",
+            fontStyle: "bold",
+            color: "#07543d"
+          }
+        )
+        .setOrigin(0.5)
+        .setInteractive({
+          useHandCursor: true
+        });
+
+    back.on(
+      "pointerover",
+      () => {
+        back.setScale(1.05);
+      }
+    );
+
+    back.on(
+      "pointerout",
+      () => {
+        back.setScale(1);
+      }
+    );
+
+    back.on(
+      "pointerdown",
+      () => {
         this.closeModal();
       }
-    });
+    );
+
+    container.add(
+      back
+    );
+
+    if (
+      AccessibilityManager.isNarrationEnabled()
+    ) {
+      AudioManager.speak(
+        "Menu de acessibilidade. Toque em um recurso para ativar ou desativar."
+      );
+    }
   }
 
   showModal({

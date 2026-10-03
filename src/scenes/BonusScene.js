@@ -1,3 +1,4 @@
+import { createGuide } from "../ui/GuideCharacter.js";
 import Phaser from "phaser";
 import {
   COLORS,
@@ -9,31 +10,33 @@ import { GameState } from "../systems/GameState.js";
 import { GameMetrics } from "../systems/GameMetrics.js";
 import { ProgressManager } from "../systems/ProgressManager.js";
 import { AudioManager } from "../systems/AudioManager.js";
+import { ApiService } from "../services/ApiService.js";
+import { BONUS_RULES, getBonusSeal } from "../data/compassData.js";
 
 const ANIMALS = [
   {
     id: "tucano",
     name: "Tucano",
     emoji: "🦜",
-    sound: "/assets/audio/tucano.mp3"
+    sound: "/assets/audio/animals/tucano.mp3"
   },
   {
     id: "onca",
     name: "Onça-pintada",
     emoji: "🐆",
-    sound: "/assets/audio/onca.mp3"
+    sound: "/assets/audio/animals/onca.mp3"
   },
   {
-    id: "arara",
-    name: "Arara",
-    emoji: "🦜",
-    sound: "/assets/audio/arara.mp3"
+    id: "tartaruga",
+    name: "Tartaruga",
+    emoji: "🐢",
+    sound: "/assets/audio/animals/tartaruga.mp3"
   },
   {
     id: "sapo",
     name: "Sapo",
     emoji: "🐸",
-    sound: "/assets/audio/sapo.mp3"
+    sound: "/assets/audio/animals/sapo.mp3"
   }
 ];
 
@@ -50,6 +53,11 @@ export class BonusScene extends Phaser.Scene {
   }
 
   create() {
+    this.currentIndex = 0;
+    this.answered = false;
+    this.answerButtons = [];
+    this.audio = null;
+
     this.drawBackground();
     this.createHeader();
     this.createMission();
@@ -58,6 +66,8 @@ export class BonusScene extends Phaser.Scene {
     AudioManager.speak(
       "Fase bônus! Ouça o som e descubra qual animal brasileiro está fazendo esse som."
     );
+
+    createGuide(this, 5);
   }
 
   drawBackground() {
@@ -292,25 +302,10 @@ export class BonusScene extends Phaser.Scene {
   playAnimalSound() {
     if (!this.currentAnimal) return;
 
-    if (this.audio) {
-      this.audio.pause();
-      this.audio.currentTime = 0;
-    }
-
-    this.audio = new Audio(
-      this.currentAnimal.sound
+    this.audio = AudioManager.playAnimalSound(
+      this.currentAnimal.sound,
+      this.currentAnimal.id
     );
-
-    this.audio.volume =
-      GameState.get().accessibility
-        .effectsVolume ?? 1;
-
-    this.audio.play().catch(error => {
-      console.warn(
-        "Não foi possível reproduzir o áudio:",
-        error
-      );
-    });
   }
 
   answer(
@@ -408,11 +403,27 @@ export class BonusScene extends Phaser.Scene {
     this.answerButtons = [];
   }
 
-  finishBonus() {
+  async finishBonus() {
+    const state = GameState.get();
+    const seal = getBonusSeal(state);
+
+    GameState.addScore(BONUS_RULES.completionPoints);
+    GameState.completeBonus(seal);
     ProgressManager.save();
 
+    try {
+      await ApiService.saveProgress({
+        ...GameState.get(),
+        metrics: GameMetrics.get()
+      });
+    } catch (error) {
+      console.warn("Não foi possível sincronizar o bônus.", error);
+    }
+
     AudioManager.speak(
-      "Parabéns! Você completou o desafio dos animais brasileiros."
+      seal === "gold"
+        ? "Parabéns! Você completou o desafio e ganhou o selo dourado de explorador!"
+        : "Parabéns! Você completou o desafio dos animais brasileiros e ganhou o selo de explorador!"
     );
 
     this.time.delayedCall(
@@ -422,7 +433,8 @@ export class BonusScene extends Phaser.Scene {
           "VictoryScene",
           {
             phase: 4,
-            bonus: true
+            bonus: true,
+            final: true
           }
         );
       }

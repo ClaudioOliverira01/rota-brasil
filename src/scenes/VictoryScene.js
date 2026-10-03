@@ -12,6 +12,9 @@ import { ProgressManager } from "../systems/ProgressManager.js";
 import { ApiService } from "../services/ApiService.js";
 import { AudioManager } from "../systems/AudioManager.js";
 import { AccessibilityManager } from "../systems/AccessibilityManager.js";
+import { ReportService } from "../services/ReportService.js";
+import { getAvatar } from "../data/gameData.js";
+import { isBonusUnlocked } from "../data/compassData.js";
 
 export class VictoryScene extends Phaser.Scene {
   constructor() {
@@ -47,6 +50,26 @@ export class VictoryScene extends Phaser.Scene {
         phase >= 4
       );
 
+    // ENTRETELA: antes da tela de resultados, mostra a bússola sendo montada.
+    if (!data.skipCompass && !data.bonus) {
+      this.scene.start("CompassTransitionScene", {
+        ...data,
+        phase,
+        final
+      });
+
+      return;
+    }
+
+    const isBonusResult =
+      Boolean(data.bonus);
+
+    const showBonusButton =
+      final &&
+      !isBonusResult &&
+      !state.bonusCompleted &&
+      isBonusUnlocked(state);
+
     const nextPhase =
       Math.min(
         phase + 1,
@@ -65,9 +88,11 @@ export class VictoryScene extends Phaser.Scene {
       .text(
         640,
         70,
-        final
-          ? "EXPEDIÇÃO CONCLUÍDA! 🎉"
-          : `FASE ${phase} CONCLUÍDA! 🎉`,
+        isBonusResult
+          ? "FASE BÔNUS CONCLUÍDA! 🌟"
+          : final
+            ? "EXPEDIÇÃO CONCLUÍDA! 🎉"
+            : `FASE ${phase} CONCLUÍDA! 🎉`,
         {
           fontFamily: "Arial",
           fontSize: "42px",
@@ -82,7 +107,7 @@ export class VictoryScene extends Phaser.Scene {
       .text(
         640,
         150,
-        "🦜",
+        getAvatar(state.avatar).emoji,
         {
           fontFamily: "Arial",
           fontSize: "100px"
@@ -163,15 +188,31 @@ export class VictoryScene extends Phaser.Scene {
     }
 
     const primaryY =
-      final
-        ? 475
-        : 450;
+      showBonusButton
+        ? 494
+        : final
+          ? 475
+          : 450;
+
+    if (showBonusButton) {
+      this.createButton(
+        640,
+        430,
+        430,
+        56,
+        "🌟 JOGAR A FASE BÔNUS",
+        COLORS.coral,
+        () => {
+          this.scene.start("BonusScene");
+        }
+      );
+    }
 
     this.createButton(
       640,
       primaryY,
       430,
-      60,
+      showBonusButton ? 52 : 60,
       final
         ? "🏆 FINALIZAR JOGO"
         : `➡️ CONTINUAR PARA A FASE ${nextPhase}`,
@@ -190,7 +231,7 @@ export class VictoryScene extends Phaser.Scene {
     this.pdfButton =
       this.createButton(
         640,
-        primaryY + 72,
+        primaryY + (showBonusButton ? 62 : 72),
         430,
         52,
         "📄 GERAR RELATÓRIO EM PDF",
@@ -202,7 +243,7 @@ export class VictoryScene extends Phaser.Scene {
 
     this.createButton(
       640,
-      primaryY + 136,
+      primaryY + (showBonusButton ? 124 : 136),
       430,
       52,
       "🏠 VOLTAR AO MENU",
@@ -373,19 +414,6 @@ export class VictoryScene extends Phaser.Scene {
     const playerId =
       GameState.get().playerId;
 
-    if (
-      !playerId ||
-      String(playerId).startsWith(
-        "local-"
-      )
-    ) {
-      this.showPdfMessage(
-        "O relatório em PDF precisa que o jogo esteja conectado ao backend."
-      );
-
-      return;
-    }
-
     this.pdfLoading = true;
 
     if (this.pdfButton?.text) {
@@ -394,14 +422,37 @@ export class VictoryScene extends Phaser.Scene {
       );
     }
 
-    try {
-      await ApiService.downloadPerformancePdf(
-        playerId
-      );
+    const hasServerPlayer =
+      playerId &&
+      !String(playerId).startsWith("local-") &&
+      !ApiService.isMockEnabled();
 
-      this.showPdfMessage(
-        "Relatório gerado com sucesso!"
-      );
+    let message =
+      "Relatório gerado com sucesso!";
+
+    try {
+      if (!hasServerPlayer) {
+        // Sem backend / jogador local: gera o PDF aqui no navegador.
+        ReportService.exportPerformanceReport();
+      } else {
+        try {
+          await ApiService.downloadPerformancePdf(
+            playerId
+          );
+        } catch (apiError) {
+          console.warn(
+            "Backend não gerou o PDF. Usando o relatório local.",
+            apiError
+          );
+
+          ReportService.exportPerformanceReport();
+
+          message =
+            "Relatório gerado (versão local).";
+        }
+      }
+
+      this.showPdfMessage(message);
 
       if (
         AccessibilityManager.isNarrationEnabled()
@@ -417,7 +468,6 @@ export class VictoryScene extends Phaser.Scene {
       );
 
       this.showPdfMessage(
-        error?.message ||
         "Não foi possível gerar o relatório agora."
       );
     } finally {

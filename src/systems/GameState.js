@@ -11,6 +11,10 @@ const DEFAULT_STATE = {
 
   completedPhases: [],
 
+  bonusCompleted: false,
+
+  bonusSeal: null,
+
   accessibility: {
     narration: true,
     highContrast: false,
@@ -108,6 +112,11 @@ export const GameState = {
         ) + 1,
         4
       );
+  },
+
+  completeBonus(seal = "silver") {
+    state.bonusCompleted = true;
+    state.bonusSeal = seal;
   },
 
   applyRemoteProgress(

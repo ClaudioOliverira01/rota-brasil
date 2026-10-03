@@ -1,11 +1,19 @@
 import Phaser from "phaser";
 
+import { createGuide } from "../ui/GuideCharacter.js";
+
 import { COLORS } from "../config/gameConfig.js";
+
 import { CARDINAL_DIRECTIONS } from "../data/gameData.js";
+
 import { GameState } from "../systems/GameState.js";
+
 import { GameMetrics } from "../systems/GameMetrics.js";
+
 import { ProgressManager } from "../systems/ProgressManager.js";
+
 import { ApiService } from "../services/ApiService.js";
+
 import { AudioManager } from "../systems/AudioManager.js";
 
 const CARD_WIDTH = 250;
@@ -34,21 +42,17 @@ export class Phase1Scene extends Phaser.Scene {
 
     this.correct = 0;
     this.total = CARDINAL_DIRECTIONS.length;
-
     this.targets = {};
     this.cards = {};
-
     this.draggingCard = null;
     this.dragPointerId = null;
-
     this.feedbackContainer = null;
     this.scoreText = null;
-
     this.errorCount = 0;
   }
 
   create() {
-    // Zera o estado da fase (a cena é reaproveitada ao jogar de novo)
+    // Zera o estado da fase
     this.correct = 0;
     this.errorCount = 0;
     this.targets = {};
@@ -71,6 +75,8 @@ export class Phase1Scene extends Phaser.Scene {
     AudioManager.speak(
       "Fase 1. Arraste cada ponto cardeal para o lugar correto na bússola. Pegue uma peça, leve até o lugar certo e solte."
     );
+
+    createGuide(this, 1);
   }
 
   // =========================================================
@@ -242,13 +248,16 @@ export class Phase1Scene extends Phaser.Scene {
       (item) => item.id === id
     );
 
-    if (!direction) return;
+    if (!direction) {
+      return;
+    }
 
     const container = this.add.container(x, y);
 
     const background = this.add.graphics();
 
     background.fillStyle(COLORS.white, 0.98);
+
     background.fillRoundedRect(
       -TARGET_WIDTH / 2,
       -TARGET_HEIGHT / 2,
@@ -258,6 +267,7 @@ export class Phase1Scene extends Phaser.Scene {
     );
 
     background.lineStyle(4, COLORS.forest, 1);
+
     background.strokeRoundedRect(
       -TARGET_WIDTH / 2,
       -TARGET_HEIGHT / 2,
@@ -477,7 +487,6 @@ export class Phase1Scene extends Phaser.Scene {
 
     // Coloca o cartão na frente
     card.setDepth(20);
-
     card.setScale(1.08);
 
     // Pequena transparência para indicar que está sendo segurado
@@ -791,6 +800,7 @@ export class Phase1Scene extends Phaser.Scene {
   handleWrong(card, direction) {
     // Conta o erro desta tentativa
     this.errorCount += 1;
+
     GameMetrics.registerError(1);
 
     const original = CARD_POSITIONS[direction.id];
@@ -802,12 +812,9 @@ export class Phase1Scene extends Phaser.Scene {
 
     this.tweens.add({
       targets: card,
-
       x: original.x,
       y: original.y,
-
       duration,
-
       ease: "Back.easeOut"
     });
 
@@ -830,7 +837,10 @@ export class Phase1Scene extends Phaser.Scene {
       this.feedbackContainer.destroy(true);
     }
 
-    this.feedbackContainer = this.add.container(640, 675);
+    this.feedbackContainer = this.add.container(
+      640,
+      675
+    );
 
     this.feedbackContainer.setDepth(50);
 
@@ -838,11 +848,23 @@ export class Phase1Scene extends Phaser.Scene {
 
     bg.fillStyle(color, 1);
 
-    bg.fillRoundedRect(-440, -24, 880, 48, 16);
+    bg.fillRoundedRect(
+      -440,
+      -24,
+      880,
+      48,
+      16
+    );
 
     bg.lineStyle(3, COLORS.white, 1);
 
-    bg.strokeRoundedRect(-440, -24, 880, 48, 16);
+    bg.strokeRoundedRect(
+      -440,
+      -24,
+      880,
+      48,
+      16
+    );
 
     const text = this.add
       .text(0, 0, message, {
@@ -857,7 +879,10 @@ export class Phase1Scene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.feedbackContainer.add([bg, text]);
+    this.feedbackContainer.add([
+      bg,
+      text
+    ]);
   }
 
   // =========================================================
@@ -872,14 +897,19 @@ export class Phase1Scene extends Phaser.Scene {
     const state = GameState.get();
 
     // Para o cronômetro e calcula o tempo da fase
-    GameMetrics.completePhase(1, state.score);
+    GameMetrics.completePhase(
+      1,
+      state.score
+    );
 
     const timeSeconds =
       GameMetrics.get().phases[1]?.timeSeconds ?? 0;
 
-    // Estrelas desta fase pela quantidade de erros (mesma regra da Fase 2)
+    // Estrelas desta fase pela quantidade de erros
     const phaseStars =
-      GameMetrics.starsForErrors(this.errorCount);
+      GameMetrics.starsForErrors(
+        this.errorCount
+      );
 
     try {
       await ApiService.savePhaseResult({
@@ -905,12 +935,18 @@ export class Phase1Scene extends Phaser.Scene {
       );
     }
 
-    this.scene.start("VictoryScene", {
-      phase: 1,
-      score: state.score,
-      stars: phaseStars,
-      timeSeconds,
-      timeText: GameMetrics.formatTime(timeSeconds)
-    });
+    this.scene.start(
+      "VictoryScene",
+      {
+        phase: 1,
+        score: state.score,
+        stars: phaseStars,
+        timeSeconds,
+        timeText:
+          GameMetrics.formatTime(
+            timeSeconds
+          )
+      }
+    );
   }
 }

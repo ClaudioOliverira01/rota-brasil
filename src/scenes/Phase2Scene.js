@@ -6,6 +6,7 @@ import {
   GAME_WIDTH
 } from "../config/gameConfig.js";
 
+import { createGuide } from "../ui/GuideCharacter.js";
 import { GameState } from "../systems/GameState.js";
 import { GameMetrics } from "../systems/GameMetrics.js";
 import { ProgressManager } from "../systems/ProgressManager.js";
@@ -67,22 +68,16 @@ const ZONE_HEIGHT = 72;
 const DROP_PADDING = 45;
 
 export default class Phase2Scene extends Phaser.Scene {
-
   constructor() {
-
     super("Phase2Scene");
 
     this.cards = [];
     this.zones = {};
-
     this.answered = 0;
     this.errors = 0;
-
     this.finishing = false;
     this.finished = false;
-
     this.feedback = null;
-
     this.draggingCard = null;
     this.highlightedZone = null;
   }
@@ -92,7 +87,7 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   create() {
-      this.cards = [];
+    this.cards = [];
     this.zones = {};
     this.answered = 0;
     this.errors = 0;
@@ -101,23 +96,21 @@ export default class Phase2Scene extends Phaser.Scene {
     this.feedback = null;
     this.draggingCard = null;
     this.highlightedZone = null;
+
     GameMetrics.startPhase(2);
 
     this.drawBackground();
-
     this.createHeader();
-
     this.createInstructions();
-
     this.createHintButton();
-
     this.createZones();
-
     this.createCards();
 
     AudioManager.speak(
       "Fase 2. Observe cada paisagem e arraste o cartão para a região correta do Brasil."
     );
+
+    createGuide(this, 2);
   }
 
   // ============================================
@@ -125,7 +118,6 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   drawBackground() {
-
     this.cameras.main.setBackgroundColor(
       COLORS.skyLight
     );
@@ -146,7 +138,6 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   createHeader() {
-
     this.add
       .rectangle(
         30,
@@ -191,7 +182,6 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   createInstructions() {
-
     this.add
       .text(
         GAME_WIDTH / 2,
@@ -212,23 +202,21 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   createHintButton() {
-
-    const button =
-      this.add
-        .rectangle(
-          170,
-          125,
-          180,
-          46,
-          0xD89B3C
-        )
-        .setStrokeStyle(
-          3,
-          0x9A6A21
-        )
-        .setInteractive({
-          useHandCursor: true
-        });
+    const button = this.add
+      .rectangle(
+        170,
+        125,
+        180,
+        46,
+        0xD89B3C
+      )
+      .setStrokeStyle(
+        3,
+        0x9A6A21
+      )
+      .setInteractive({
+        useHandCursor: true
+      });
 
     this.add
       .text(
@@ -257,31 +245,28 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   createZones() {
-
     const x = 900;
     const startY = 190;
     const gap = 92;
 
     REGIONS.forEach(
       (region, index) => {
-
         const y =
           startY +
           index * gap;
 
-        const zone =
-          this.add
-            .rectangle(
-              x,
-              y,
-              ZONE_WIDTH,
-              ZONE_HEIGHT,
-              0xFFFFFF
-            )
-            .setStrokeStyle(
-              4,
-              0x4C8A3A
-            );
+        const zone = this.add
+          .rectangle(
+            x,
+            y,
+            ZONE_WIDTH,
+            ZONE_HEIGHT,
+            0xFFFFFF
+          )
+          .setStrokeStyle(
+            4,
+            0x4C8A3A
+          );
 
         zone.setData(
           "region",
@@ -317,8 +302,7 @@ export default class Phase2Scene extends Phaser.Scene {
           )
           .setOrigin(0.5);
 
-        this.zones[region] =
-          zone;
+        this.zones[region] = zone;
       }
     );
   }
@@ -328,7 +312,6 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   createCards() {
-
     const positions = [
       {
         x: 285,
@@ -354,7 +337,6 @@ export default class Phase2Scene extends Phaser.Scene {
 
     BIOMES.forEach(
       (biome, index) => {
-
         const position =
           positions[index];
 
@@ -530,12 +512,10 @@ export default class Phase2Scene extends Phaser.Scene {
         card.on(
           "dragstart",
           (pointer) => {
-
             this.startCardDrag(
               pointer,
               card
             );
-
           }
         );
 
@@ -546,14 +526,12 @@ export default class Phase2Scene extends Phaser.Scene {
         card.on(
           "drag",
           (pointer, dragX, dragY) => {
-
             this.updateCardDrag(
               pointer,
               card,
               dragX,
               dragY
             );
-
           }
         );
 
@@ -564,12 +542,10 @@ export default class Phase2Scene extends Phaser.Scene {
         card.on(
           "dragend",
           (pointer) => {
-
             this.endCardDrag(
               pointer,
               card
             );
-
           }
         );
 
@@ -595,7 +571,6 @@ export default class Phase2Scene extends Phaser.Scene {
     pointer,
     card
   ) {
-
     if (
       this.finishing ||
       this.finished
@@ -634,7 +609,6 @@ export default class Phase2Scene extends Phaser.Scene {
       );
 
     if (background) {
-
       background.setStrokeStyle(
         5,
         0xD89B3C
@@ -658,7 +632,6 @@ export default class Phase2Scene extends Phaser.Scene {
     dragX,
     dragY
   ) {
-
     if (
       this.draggingCard !==
       card
@@ -712,7 +685,6 @@ export default class Phase2Scene extends Phaser.Scene {
     pointer,
     card
   ) {
-
     if (
       this.draggingCard !==
       card
@@ -742,7 +714,6 @@ export default class Phase2Scene extends Phaser.Scene {
       );
 
     if (background) {
-
       background.setStrokeStyle(
         4,
         0xD89B3C
@@ -761,7 +732,6 @@ export default class Phase2Scene extends Phaser.Scene {
     // ========================================
 
     if (!targetRegion) {
-
       this.returnCard(
         card
       );
@@ -781,7 +751,6 @@ export default class Phase2Scene extends Phaser.Scene {
       targetRegion ===
       biome.region
     ) {
-
       this.handleCorrect(
         card,
         biome,
@@ -808,12 +777,10 @@ export default class Phase2Scene extends Phaser.Scene {
   getDropRegion(
     card
   ) {
-
     for (
       const region
       of REGIONS
     ) {
-
       const zone =
         this.zones[region];
 
@@ -828,13 +795,10 @@ export default class Phase2Scene extends Phaser.Scene {
         new Phaser.Geom.Rectangle(
           bounds.x -
             DROP_PADDING,
-
           bounds.y -
             DROP_PADDING,
-
           bounds.width +
             DROP_PADDING * 2,
-
           bounds.height +
             DROP_PADDING * 2
         );
@@ -845,7 +809,6 @@ export default class Phase2Scene extends Phaser.Scene {
           card.y
         )
       ) {
-
         return region;
       }
     }
@@ -860,7 +823,6 @@ export default class Phase2Scene extends Phaser.Scene {
   updateZoneHighlight(
     card
   ) {
-
     const region =
       this.getDropRegion(
         card
@@ -904,7 +866,6 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   clearZoneHighlight() {
-
     if (
       !this.highlightedZone
     ) {
@@ -917,13 +878,11 @@ export default class Phase2Scene extends Phaser.Scene {
       ];
 
     if (zone) {
-
       if (
         zone.getData(
           "completed"
         )
       ) {
-
         zone.setFillStyle(
           0xE4F5E8
         );
@@ -932,9 +891,7 @@ export default class Phase2Scene extends Phaser.Scene {
           5,
           0x2E7D32
         );
-
       } else {
-
         zone.setFillStyle(
           zone.getData(
             "defaultFill"
@@ -963,10 +920,9 @@ export default class Phase2Scene extends Phaser.Scene {
     biome,
     region
   ) {
-
     const data =
       this.cards.find(
-        item =>
+        (item) =>
           item.container ===
           card
       );
@@ -989,6 +945,7 @@ export default class Phase2Scene extends Phaser.Scene {
     this.answered += 1;
 
     // Pontuação
+
     GameState.addScore(
       20
     );
@@ -1033,7 +990,6 @@ export default class Phase2Scene extends Phaser.Scene {
         : false;
 
     this.tweens.add({
-
       targets:
         card,
 
@@ -1065,7 +1021,6 @@ export default class Phase2Scene extends Phaser.Scene {
       );
 
     if (background) {
-
       background.setStrokeStyle(
         4,
         0x2E7D32
@@ -1098,16 +1053,13 @@ export default class Phase2Scene extends Phaser.Scene {
       this.answered ===
       BIOMES.length
     ) {
-
       this.finishing =
         true;
 
       this.time.delayedCall(
         900,
         () => {
-
           this.finishPhase();
-
         }
       );
     }
@@ -1121,7 +1073,6 @@ export default class Phase2Scene extends Phaser.Scene {
     card,
     biome
   ) {
-
     this.errors += 1;
 
     GameMetrics.registerError(
@@ -1148,10 +1099,9 @@ export default class Phase2Scene extends Phaser.Scene {
   returnCard(
     card
   ) {
-
     const data =
       this.cards.find(
-        item =>
+        (item) =>
           item.container ===
           card
       );
@@ -1170,7 +1120,6 @@ export default class Phase2Scene extends Phaser.Scene {
         : false;
 
     this.tweens.add({
-
       targets:
         card,
 
@@ -1198,7 +1147,6 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   showGlobalHint() {
-
     this.showFeedback(
       "Dica: leia as características de cada paisagem. Elas ajudam você a descobrir a região!"
     );
@@ -1215,11 +1163,8 @@ export default class Phase2Scene extends Phaser.Scene {
   showFeedback(
     text
   ) {
-
     if (this.feedback) {
-
       this.feedback.destroy();
-
       this.feedback =
         null;
     }
@@ -1265,11 +1210,8 @@ export default class Phase2Scene extends Phaser.Scene {
     this.time.delayedCall(
       2600,
       () => {
-
         if (this.feedback) {
-
           this.feedback.destroy();
-
           this.feedback =
             null;
         }
@@ -1282,7 +1224,6 @@ export default class Phase2Scene extends Phaser.Scene {
   // ============================================
 
   async finishPhase() {
-
     if (this.finished) {
       return;
     }
@@ -1320,17 +1261,12 @@ export default class Phase2Scene extends Phaser.Scene {
     if (
       this.errors === 0
     ) {
-
       phaseStars = 3;
-
     } else if (
       this.errors <= 2
     ) {
-
       phaseStars = 2;
-
     } else {
-
       phaseStars = 1;
     }
 
@@ -1339,7 +1275,6 @@ export default class Phase2Scene extends Phaser.Scene {
     // ========================================
 
     try {
-
       const metrics =
         GameMetrics.get();
 
@@ -1391,7 +1326,6 @@ export default class Phase2Scene extends Phaser.Scene {
       );
 
       await ApiService.savePhaseResult({
-
         playerId:
           state.playerId,
 
@@ -1420,11 +1354,10 @@ export default class Phase2Scene extends Phaser.Scene {
       });
 
       await ApiService.saveProgress({
-
         playerId:
           state.playerId,
 
-               currentPhase:
+        currentPhase:
           state.currentPhase,
 
         score:
@@ -1439,7 +1372,6 @@ export default class Phase2Scene extends Phaser.Scene {
       );
 
     } catch (error) {
-
       console.error(
         "=========================================="
       );

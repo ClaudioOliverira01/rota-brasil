@@ -1,7 +1,7 @@
 export const AVATARS = [
-  { id: "ae", name: "Aê", emoji: "🦜", description: "Tucano explorador" },
-  { id: "onca", name: "Jagu", emoji: "🐆", description: "Onça curiosa" },
-  { id: "tartaruga", name: "Tuca", emoji: "🐢", description: "Tartaruga viajante" }
+  { id: "ae", name: "Aê", emoji: "🦜", description: "Tucano explorador", sound: "/assets/audio/animals/tucano.mp3" },
+  { id: "onca", name: "Jagu", emoji: "🐆", description: "Onça curiosa", sound: "/assets/audio/animals/onca.mp3" },
+  { id: "tartaruga", name: "Tuca", emoji: "🐢", description: "Tartaruga viajante", sound: "/assets/audio/animals/tartaruga.mp3" }
 ];
 
 export const CARDINAL_DIRECTIONS = [
@@ -37,3 +37,7 @@ export const PHASES = [
     description: "Reconhecer biomas e atitudes de preservação."
   }
 ];
+
+export function getAvatar(id) {
+  return AVATARS.find(item => item.id === id) || AVATARS[0];
+}

@@ -1,3 +1,5 @@
+import { triggerDownload } from "./ReportService.js";
+
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api"
 ).replace(/\/$/, "");
@@ -67,12 +69,16 @@ async function request(path, options = {}) {
   }
 }
 
+const PDF_TIMEOUT = Number(
+  import.meta.env.VITE_PDF_TIMEOUT || 45000
+);
+
 async function requestBlob(path, options = {}) {
   const controller = new AbortController();
 
   const timeoutId = window.setTimeout(
     () => controller.abort(),
-    API_TIMEOUT
+    PDF_TIMEOUT
   );
 
   try {
@@ -252,20 +258,15 @@ export const ApiService = {
       `/reports/${encodeURIComponent(playerId)}/pdf`
     );
 
-    const url = URL.createObjectURL(blob);
+    // Garante que o que chegou é mesmo um PDF (e não uma página de erro)
+    if (!blob || blob.size < 200) {
+      throw new Error("O servidor devolveu um relatório vazio.");
+    }
 
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "relatorio-rota-brasil.pdf";
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    window.setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1000);
+    triggerDownload(
+      blob,
+      "relatorio-rota-brasil.pdf"
+    );
 
     return true;
   }

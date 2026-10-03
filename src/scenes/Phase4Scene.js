@@ -1,5 +1,13 @@
 import Phaser from "phaser";
-import { COLORS, GAME_HEIGHT, GAME_WIDTH } from "../config/gameConfig.js";
+
+import { createGuide } from "../ui/GuideCharacter.js";
+
+import {
+  COLORS,
+  GAME_HEIGHT,
+  GAME_WIDTH
+} from "../config/gameConfig.js";
+
 import { GameState } from "../systems/GameState.js";
 import { GameMetrics } from "../systems/GameMetrics.js";
 import { ProgressManager } from "../systems/ProgressManager.js";
@@ -120,6 +128,8 @@ export class Phase4Scene extends Phaser.Scene {
     AudioManager.speak(
       "Fase 4. Ajude Aê a separar corretamente os resíduos. Arraste cada objeto até a lixeira correspondente."
     );
+
+    createGuide(this, 4);
   }
 
   drawBackground() {
@@ -137,40 +147,65 @@ export class Phase4Scene extends Phaser.Scene {
     g.fillStyle(COLORS.leaf, 1);
 
     for (let i = 0; i < 15; i += 1) {
-      g.fillCircle(30 + i * 90, 700 + (i % 2) * 8, 40);
+      g.fillCircle(
+        30 + i * 90,
+        700 + (i % 2) * 8,
+        40
+      );
     }
   }
 
   createHeader() {
     this.add
-      .rectangle(105, 45, 125, 52, COLORS.forest)
+      .rectangle(
+        105,
+        45,
+        125,
+        52,
+        COLORS.forest
+      )
       .setStrokeStyle(3, COLORS.white);
 
     this.add
-      .text(105, 45, "FASE 4", {
-        fontFamily: "Arial",
-        fontSize: "24px",
-        fontStyle: "bold",
-        color: "#ffffff"
-      })
+      .text(
+        105,
+        45,
+        "FASE 4",
+        {
+          fontFamily: "Arial",
+          fontSize: "24px",
+          fontStyle: "bold",
+          color: "#ffffff"
+        }
+      )
       .setOrigin(0.5);
 
     this.add
-      .text(640, 45, "MISSÃO DA RECICLAGEM", {
-        fontFamily: "Arial",
-        fontSize: "32px",
-        fontStyle: "bold",
-        color: "#07543d"
-      })
+      .text(
+        640,
+        45,
+        "MISSÃO DA RECICLAGEM",
+        {
+          fontFamily: "Arial",
+          fontSize: "32px",
+          fontStyle: "bold",
+          color: "#07543d"
+        }
+      )
       .setOrigin(0.5);
 
     this.scoreText = this.add
-      .text(1235, 45, `⭐ ${GameState.get().score}`, {
-        fontFamily: "Arial",
-        fontSize: "23px",
-        fontStyle: "bold",
-        color: "#07543d"
-      })
+      .text(
+        1235,
+        45,
+        `⭐ ${GameState.get().score}`,
+        {
+          fontFamily: "Arial",
+          fontSize: "23px",
+          fontStyle: "bold",
+          color: "#07543d"
+        }
+      )
       .setOrigin(1, 0.5);
   }
 
@@ -178,12 +213,34 @@ export class Phase4Scene extends Phaser.Scene {
     const panel = this.add.graphics();
 
     panel.fillStyle(COLORS.cream, 1);
-    panel.fillRoundedRect(-540, -35, 1080, 70, 22);
 
-    panel.lineStyle(3, COLORS.forest, 1);
-    panel.strokeRoundedRect(-540, -35, 1080, 70, 22);
+    panel.fillRoundedRect(
+      -540,
+      -35,
+      1080,
+      70,
+      22
+    );
 
-    this.add.container(640, 120, [panel]);
+    panel.lineStyle(
+      3,
+      COLORS.forest,
+      1
+    );
+
+    panel.strokeRoundedRect(
+      -540,
+      -35,
+      1080,
+      70,
+      22
+    );
+
+    this.add.container(
+      640,
+      120,
+      [panel]
+    );
 
     this.add
       .text(
@@ -214,7 +271,7 @@ export class Phase4Scene extends Phaser.Scene {
   }
 
   createTargets() {
-    TARGETS.forEach(targetData => {
+    TARGETS.forEach((targetData) => {
       const container = this.add.container(
         targetData.x,
         targetData.y
@@ -238,22 +295,35 @@ export class Phase4Scene extends Phaser.Scene {
           targetData.color,
           1
         )
-        .setStrokeStyle(5, COLORS.white);
+        .setStrokeStyle(
+          5,
+          COLORS.white
+        );
 
       const emoji = this.add
-        .text(0, -25, targetData.emoji, {
-          fontFamily: "Arial",
-          fontSize: "38px"
-        })
+        .text(
+          0,
+          -25,
+          targetData.emoji,
+          {
+            fontFamily: "Arial",
+            fontSize: "38px"
+          }
+        )
         .setOrigin(0.5);
 
       const label = this.add
-        .text(0, 28, targetData.label, {
-          fontFamily: "Arial",
-          fontSize: "17px",
-          fontStyle: "bold",
-          color: "#ffffff"
-        })
+        .text(
+          0,
+          28,
+          targetData.label,
+          {
+            fontFamily: "Arial",
+            fontSize: "17px",
+            fontStyle: "bold",
+            color: "#ffffff"
+          }
+        )
         .setOrigin(0.5);
 
       container.add([
@@ -263,9 +333,20 @@ export class Phase4Scene extends Phaser.Scene {
         label
       ]);
 
-      container.setData("target", targetData.id);
-      container.setData("background", background);
-      container.setData("completed", false);
+      container.setData(
+        "target",
+        targetData.id
+      );
+
+      container.setData(
+        "background",
+        background
+      );
+
+      container.setData(
+        "completed",
+        false
+      );
 
       this.targets[targetData.id] = container;
     });
@@ -298,26 +379,39 @@ export class Phase4Scene extends Phaser.Scene {
           COLORS.white,
           1
         )
-        .setStrokeStyle(4, COLORS.forest);
+        .setStrokeStyle(
+          4,
+          COLORS.forest
+        );
 
       const emoji = this.add
-        .text(-65, 0, item.emoji, {
-          fontFamily: "Arial",
-          fontSize: "38px"
-        })
+        .text(
+          -65,
+          0,
+          item.emoji,
+          {
+            fontFamily: "Arial",
+            fontSize: "38px"
+          }
+        )
         .setOrigin(0.5);
 
       const text = this.add
-        .text(15, 0, item.name, {
-          fontFamily: "Arial",
-          fontSize: "17px",
-          fontStyle: "bold",
-          color: "#18332c",
-          align: "center",
-          wordWrap: {
-            width: 120
+        .text(
+          15,
+          0,
+          item.name,
+          {
+            fontFamily: "Arial",
+            fontSize: "17px",
+            fontStyle: "bold",
+            color: "#18332c",
+            align: "center",
+            wordWrap: {
+              width: 120
+            }
           }
-        })
+        )
         .setOrigin(0.5);
 
       const hitArea = this.add
@@ -341,42 +435,84 @@ export class Phase4Scene extends Phaser.Scene {
         hitArea
       ]);
 
-      container.setData("item", item);
-      container.setData("homeX", position.x);
-      container.setData("homeY", position.y);
-      container.setData("completed", false);
-      container.setData("background", background);
+      container.setData(
+        "item",
+        item
+      );
 
-      hitArea.on("pointerdown", pointer => {
-        this.beginDrag(pointer, container);
-      });
+      container.setData(
+        "homeX",
+        position.x
+      );
 
-      hitArea.on("pointerover", () => {
-        if (!this.draggingItem) {
-          container.setScale(1.04);
+      container.setData(
+        "homeY",
+        position.y
+      );
+
+      container.setData(
+        "completed",
+        false
+      );
+
+      container.setData(
+        "background",
+        background
+      );
+
+      hitArea.on(
+        "pointerdown",
+        (pointer) => {
+          this.beginDrag(
+            pointer,
+            container
+          );
         }
-      });
+      );
 
-      hitArea.on("pointerout", () => {
-        if (this.draggingItem !== container) {
-          container.setScale(1);
+      hitArea.on(
+        "pointerover",
+        () => {
+          if (!this.draggingItem) {
+            container.setScale(1.04);
+          }
         }
-      });
+      );
+
+      hitArea.on(
+        "pointerout",
+        () => {
+          if (
+            this.draggingItem !== container
+          ) {
+            container.setScale(1);
+          }
+        }
+      );
 
       this.items.push(container);
     });
 
-    this.input.on("pointermove", pointer => {
-      this.moveDrag(pointer);
-    });
+    this.input.on(
+      "pointermove",
+      (pointer) => {
+        this.moveDrag(pointer);
+      }
+    );
 
-    this.input.on("pointerup", pointer => {
-      this.endDrag(pointer);
-    });
+    this.input.on(
+      "pointerup",
+      (pointer) => {
+        this.endDrag(pointer);
+      }
+    );
 
-    this.input.on("pointerupoutside", pointer => {
-      this.endDrag(pointer);
-    });
+    this.input.on(
+      "pointerupoutside",
+      (pointer) => {
+        this.endDrag(pointer);
+      }
+    );
   }
 
   beginDrag(pointer, item) {
@@ -447,9 +583,16 @@ export class Phase4Scene extends Phaser.Scene {
       target &&
       target.getData("target") === waste.target
     ) {
-      this.handleCorrect(item, target, waste);
+      this.handleCorrect(
+        item,
+        target,
+        waste
+      );
     } else {
-      this.handleWrong(item, waste);
+      this.handleWrong(
+        item,
+        waste
+      );
     }
   }
 
@@ -457,69 +600,107 @@ export class Phase4Scene extends Phaser.Scene {
     let nearest = null;
     let distance = Infinity;
 
-    Object.values(this.targets).forEach(target => {
-      if (target.getData("completed")) return;
+    Object.values(this.targets).forEach(
+      (target) => {
+        if (target.getData("completed")) {
+          return;
+        }
 
-      const d = Phaser.Math.Distance.Between(
-        item.x,
-        item.y,
-        target.x,
-        target.y
-      );
+        const d =
+          Phaser.Math.Distance.Between(
+            item.x,
+            item.y,
+            target.x,
+            target.y
+          );
 
-      if (d < distance) {
-        distance = d;
-        nearest = target;
+        if (d < distance) {
+          distance = d;
+          nearest = target;
+        }
       }
-    });
+    );
 
-    return distance <= 130 ? nearest : null;
+    return distance <= 130
+      ? nearest
+      : null;
   }
 
   highlightNearestTarget() {
     this.clearTargetHighlights();
 
-    const target = this.findNearestTarget(
-      this.draggingItem
-    );
+    const target =
+      this.findNearestTarget(
+        this.draggingItem
+      );
 
-    if (!target) return;
+    if (!target) {
+      return;
+    }
 
     target
       .getData("background")
-      .setStrokeStyle(7, COLORS.orange);
+      .setStrokeStyle(
+        7,
+        COLORS.orange
+      );
   }
 
   clearTargetHighlights() {
-    Object.values(this.targets).forEach(target => {
-      if (target.getData("completed")) return;
+    Object.values(this.targets).forEach(
+      (target) => {
+        if (target.getData("completed")) {
+          return;
+        }
 
-      target
-        .getData("background")
-        .setStrokeStyle(5, COLORS.white);
-    });
+        target
+          .getData("background")
+          .setStrokeStyle(
+            5,
+            COLORS.white
+          );
+      }
+    );
   }
 
-  handleCorrect(item, target, waste) {
+  handleCorrect(
+    item,
+    target,
+    waste
+  ) {
     item.setPosition(
       target.x,
       target.y
     );
 
     item.setDepth(30);
-    item.setData("completed", true);
 
-    target.setData("completed", true);
+    item.setData(
+      "completed",
+      true
+    );
+
+    target.setData(
+      "completed",
+      true
+    );
 
     target
       .getData("background")
-      .setStrokeStyle(7, COLORS.success);
+      .setStrokeStyle(
+        7,
+        COLORS.success
+      );
 
     this.correct += 1;
 
     GameState.addScore(20);
     GameState.addStar();
-    GameMetrics.addScore(4, 20);
+
+    GameMetrics.addScore(
+      4,
+      20
+    );
 
     ProgressManager.save();
 
@@ -549,11 +730,15 @@ export class Phase4Scene extends Phaser.Scene {
     }
   }
 
-  handleWrong(item, waste) {
+  handleWrong(
+    item,
+    waste
+  ) {
     GameMetrics.registerError(4);
 
     const duration =
-      GameState.get().accessibility.reducedMotion
+      GameState.get().accessibility
+        .reducedMotion
         ? 0
         : 280;
 
@@ -575,12 +760,19 @@ export class Phase4Scene extends Phaser.Scene {
     );
   }
 
-  showFeedback(message, color) {
+  showFeedback(
+    message,
+    color
+  ) {
     this.feedback?.destroy();
 
     const bg = this.add.graphics();
 
-    bg.fillStyle(color, 1);
+    bg.fillStyle(
+      color,
+      1
+    );
+
     bg.fillRoundedRect(
       -500,
       -28,
@@ -589,7 +781,11 @@ export class Phase4Scene extends Phaser.Scene {
       18
     );
 
-    bg.lineStyle(3, COLORS.white, 1);
+    bg.lineStyle(
+      3,
+      COLORS.white,
+      1
+    );
 
     bg.strokeRoundedRect(
       -500,
@@ -600,20 +796,32 @@ export class Phase4Scene extends Phaser.Scene {
     );
 
     const text = this.add
-      .text(0, 0, message, {
-        fontFamily: "Arial",
-        fontSize: "17px",
-        fontStyle: "bold",
-        color: "#ffffff",
-        align: "center",
-        wordWrap: {
-          width: 930
+      .text(
+        0,
+        0,
+        message,
+        {
+          fontFamily: "Arial",
+          fontSize: "17px",
+          fontStyle: "bold",
+          color: "#ffffff",
+          align: "center",
+          wordWrap: {
+            width: 930
+          }
         }
-      })
+      )
       .setOrigin(0.5);
 
     this.feedback = this.add
-      .container(640, 700, [bg, text])
+      .container(
+        640,
+        700,
+        [
+          bg,
+          text
+        ]
+      )
       .setDepth(300);
   }
 
@@ -628,6 +836,7 @@ export class Phase4Scene extends Phaser.Scene {
     ProgressManager.save();
 
     const state = GameState.get();
+
     const phaseMetrics =
       GameMetrics.get().phases[4] || {};
 
@@ -640,7 +849,8 @@ export class Phase4Scene extends Phaser.Scene {
         completed: true,
         errors: phaseMetrics.errors || 0,
         attempts: phaseMetrics.attempts || 0,
-        timeSeconds: phaseMetrics.timeSeconds || 0
+        timeSeconds:
+          phaseMetrics.timeSeconds || 0
       });
 
       await ApiService.saveProgress({

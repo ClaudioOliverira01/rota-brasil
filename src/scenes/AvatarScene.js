@@ -197,9 +197,17 @@ export class AvatarScene extends Phaser.Scene {
           );
         });
 
-        AudioManager.speak(
-          `${avatar.name}, ${avatar.description}.`
-        );
+        // Som real do animal; a fala só entra depois, para não cobrir o som.
+        AudioManager.stop();
+        AudioManager.playAnimalSound(avatar.sound, avatar.id);
+
+        this.time.delayedCall(1400, () => {
+          if (this.selectedAvatar === avatar.id) {
+            AudioManager.speak(
+              `${avatar.name}, ${avatar.description}.`
+            );
+          }
+        });
       });
     });
   }

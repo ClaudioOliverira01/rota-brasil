@@ -2,7 +2,7 @@
 
 @font-face {
   font-family: "OpenDyslexic";
-  src: url("/assets/fonts/OpenDyslexic-Regular.woff2")
+  src: url("/assets/audio/fonts/OpenDyslexic-Regular.woff2")
     format("woff2");
 
   font-weight: 400;
@@ -10,14 +10,14 @@
   font-display: swap;
 }
 
-.dyslexia-font {
+.accessibility-dyslexia {
   font-family:
     "OpenDyslexic",
     Arial,
     sans-serif !important;
 }
 
-.dyslexia-font * {
+.accessibility-dyslexia * {
   font-family:
     "OpenDyslexic",
     Arial,
