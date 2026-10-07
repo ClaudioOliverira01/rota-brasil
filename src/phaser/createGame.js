@@ -7,7 +7,7 @@ import {
 
 import { BootScene } from "../scenes/BootScene.js";
 import { PreloadScene } from "../scenes/PreloadScene.js";
-import { MenuScene } from "../scenes/MenuScene.js";
+import { BridgeMenuScene } from "./BridgeMenuScene.js";
 import { ProfileScene } from "../scenes/ProfileScene.js";
 import { AvatarScene } from "../scenes/AvatarScene.js";
 import { StoryScene } from "../scenes/StoryScene.js";
@@ -24,10 +24,20 @@ import { RankingScene } from "../scenes/RankingScene.js";
  * Cria o jogo Phaser dentro do elemento recebido.
  * Arquivo sem React: quem decide QUANDO criar e destruir o jogo
  * é o componente PhaserStage.
+ *
+ * entryScene: cena em que o jogo deve começar depois do carregamento
+ * (o menu agora é uma tela em React).
  */
-export function createGame(parent) {
+export function createGame(parent, { entryScene = "ProfileScene" } = {}) {
   return new Phaser.Game({
     type: Phaser.AUTO,
+
+    callbacks: {
+      preBoot: game => {
+        game.registry.set("entryScene", entryScene);
+        game.registry.set("entryConsumed", false);
+      }
+    },
 
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
@@ -59,7 +69,7 @@ export function createGame(parent) {
     scene: [
       BootScene,
       PreloadScene,
-      MenuScene,
+      BridgeMenuScene,
       ProfileScene,
       AvatarScene,
       StoryScene,

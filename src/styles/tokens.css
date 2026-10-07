@@ -1,0 +1,92 @@
+/*
+ * DESIGN SYSTEM DO ROTA BRASIL — tokens
+ * Todas as telas em React usam SOMENTE estas variáveis.
+ * Para mudar a identidade visual, altere aqui.
+ *
+ * Contraste (WCAG): texto branco sobre --btn-primary-bg = 5,35:1;
+ * texto escuro sobre --btn-secondary-bg = 7,12:1 (mínimo recomendado: 4,5:1).
+ */
+:root {
+  /* Tipografia infantil, arredondada e legível */
+  --font-display:
+    "Fredoka Variable", "Baloo 2", "Trebuchet MS",
+    "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-body: var(--font-display);
+
+  --text-base: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-hero: clamp(2.75rem, 9vw, 5rem);
+
+  /* Cenário (mesma família de cores do jogo atual) */
+  --color-sky: #a8e8ff;
+  --color-sky-soft: #d6f4ff;
+  --color-hill: #b8ecc0;
+  --color-leaf: #4bd9a0;
+  --color-sun: #ffd873;
+
+  /* Texto e superfícies */
+  --color-ink: #18332c;
+  --color-title: #07543d;
+  --color-muted: #3f5d55;
+  --color-surface: #fefdf7;
+  --color-white: #ffffff;
+
+  /* Botões: primário (verde), secundário (laranja), claro (branco) */
+  --btn-primary-bg: #0e7a52;
+  --btn-primary-edge: #07543d;
+  --btn-primary-fg: #ffffff;
+
+  --btn-secondary-bg: #ffa94d;
+  --btn-secondary-edge: #db7a1f;
+  --btn-secondary-fg: #18332c;
+
+  --btn-light-bg: #ffffff;
+  --btn-light-edge: #9fd9c0;
+  --btn-light-fg: #07543d;
+
+  /* Estados */
+  --color-on-bg: #e3f9ee;
+  --color-on-border: #0e7a52;
+
+  /* Foco: anel escuro com respiro, visível sobre qualquer fundo */
+  --focus-outer: #18332c;
+
+  /* Forma */
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-pill: 999px;
+  --border-w: 3px;
+
+  /* Tamanhos de botão (alvo de toque confortável para crianças) */
+  --btn-h-lg: 4.5rem;
+  --btn-h-md: 3.75rem;
+  --btn-h-sm: 3.25rem;
+}
+
+/* ALTO CONTRASTE (ativado em Acessibilidade) */
+html[data-high-contrast="true"] {
+  --color-sky: #ffffff;
+  --color-sky-soft: #ffffff;
+  --color-hill: #ececec;
+  --color-leaf: #d0d0d0;
+  --color-sun: #ffe14d;
+
+  --color-ink: #000000;
+  --color-title: #000000;
+  --color-muted: #000000;
+  --color-surface: #ffffff;
+
+  --btn-primary-bg: #004d33;
+  --btn-primary-edge: #000000;
+  --btn-secondary-bg: #ffd400;
+  --btn-secondary-edge: #000000;
+  --btn-secondary-fg: #000000;
+  --btn-light-edge: #000000;
+  --btn-light-fg: #000000;
+
+  --color-on-bg: #ffffff;
+  --color-on-border: #000000;
+  --focus-outer: #000000;
+  --border-w: 4px;
+}

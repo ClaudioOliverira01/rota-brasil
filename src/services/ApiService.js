@@ -1,4 +1,6 @@
 import { triggerDownload } from "./ReportService.js";
+import { GameState } from "../systems/GameState.js";
+import { GameMetrics } from "../systems/GameMetrics.js";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api"
@@ -131,6 +133,39 @@ async function requestBlob(path, options = {}) {
   }
 }
 
+/*
+ * Monta SEMPRE o progresso completo do jogador a partir do estado
+ * atual do jogo (GameState + GameMetrics).
+ *
+ * As cenas podem passar apenas um pedaço do progresso (por exemplo,
+ * só as estrelas da fase). Isso nunca é enviado como está: o estado
+ * completo é a fonte da verdade, e o payload recebido só serve para
+ * completar o playerId quando o estado ainda não o tem.
+ */
+function buildFullProgress(partial = {}) {
+  const state = GameState.get();
+  const metrics = GameMetrics.get();
+
+  return {
+    playerId: state.playerId || partial.playerId || null,
+    nickname: state.nickname || partial.nickname || "",
+    avatar: state.avatar || partial.avatar || "ae",
+    currentPhase: Number(state.currentPhase) || 1,
+    score: Number(state.score) || 0,
+    stars: Number(state.stars) || 0,
+    completedPhases: Array.isArray(state.completedPhases)
+      ? [...state.completedPhases]
+      : [],
+    accessibility: { ...(state.accessibility || {}) },
+    metrics: {
+      gameStartedAt: metrics.gameStartedAt ?? null,
+      gameCompletedAt: metrics.gameCompletedAt ?? null,
+      totalTimeSeconds: Number(metrics.totalTimeSeconds) || 0,
+      phases: { ...(metrics.phases || {}) }
+    }
+  };
+}
+
 export const ApiService = {
   get baseUrl() {
     return API_BASE_URL;
@@ -192,7 +227,9 @@ export const ApiService = {
     );
   },
 
-  async saveProgress(payload) {
+  async saveProgress(partial) {
+    const payload = buildFullProgress(partial);
+
     if (USE_MOCK) {
       return payload;
     }
