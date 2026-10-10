@@ -1,6 +1,8 @@
 @import "../styles/global.css";
 @import "./styles/tokens.css";
 @import "./styles/app.css";
+@import "./styles/ranking.css";
+@import "./styles/profile.css";
 
 @font-face {
   font-family: "OpenDyslexic";

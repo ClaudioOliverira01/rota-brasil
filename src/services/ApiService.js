@@ -1,6 +1,5 @@
 import { triggerDownload } from "./ReportService.js";
-import { GameState } from "../systems/GameState.js";
-import { GameMetrics } from "../systems/GameMetrics.js";
+import { buildProgressSnapshot } from "./ProgressSnapshot.js";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api"
@@ -10,8 +9,16 @@ const USE_MOCK =
   String(import.meta.env.VITE_USE_MOCK ?? "false") === "true";
 
 const API_TIMEOUT = Number(
-  import.meta.env.VITE_API_TIMEOUT || 8000
+  import.meta.env.VITE_API_TIMEOUT || 12000
 );
+
+/**
+ * IDs que começam com "local-" são de jogadores criados sem conexão:
+ * eles não existem no servidor, então não há o que sincronizar.
+ */
+function isServerPlayerId(playerId) {
+  return Boolean(playerId) && !String(playerId).startsWith("local-");
+}
 
 async function request(path, options = {}) {
   const controller = new AbortController();
@@ -133,39 +140,6 @@ async function requestBlob(path, options = {}) {
   }
 }
 
-/*
- * Monta SEMPRE o progresso completo do jogador a partir do estado
- * atual do jogo (GameState + GameMetrics).
- *
- * As cenas podem passar apenas um pedaço do progresso (por exemplo,
- * só as estrelas da fase). Isso nunca é enviado como está: o estado
- * completo é a fonte da verdade, e o payload recebido só serve para
- * completar o playerId quando o estado ainda não o tem.
- */
-function buildFullProgress(partial = {}) {
-  const state = GameState.get();
-  const metrics = GameMetrics.get();
-
-  return {
-    playerId: state.playerId || partial.playerId || null,
-    nickname: state.nickname || partial.nickname || "",
-    avatar: state.avatar || partial.avatar || "ae",
-    currentPhase: Number(state.currentPhase) || 1,
-    score: Number(state.score) || 0,
-    stars: Number(state.stars) || 0,
-    completedPhases: Array.isArray(state.completedPhases)
-      ? [...state.completedPhases]
-      : [],
-    accessibility: { ...(state.accessibility || {}) },
-    metrics: {
-      gameStartedAt: metrics.gameStartedAt ?? null,
-      gameCompletedAt: metrics.gameCompletedAt ?? null,
-      totalTimeSeconds: Number(metrics.totalTimeSeconds) || 0,
-      phases: { ...(metrics.phases || {}) }
-    }
-  };
-}
-
 export const ApiService = {
   get baseUrl() {
     return API_BASE_URL;
@@ -227,16 +201,33 @@ export const ApiService = {
     );
   },
 
-  async saveProgress(partial) {
-    const payload = buildFullProgress(partial);
-
+  /**
+   * Salva o progresso. O conteúdo vem SEMPRE do estado real do jogo
+   * (ProgressSnapshot): os campos enviados pela cena que chamou são
+   * ignorados, exceto o playerId e o reset. Assim nenhuma tela consegue
+   * gravar um progresso incompleto.
+   */
+  async saveProgress(payload = {}) {
     if (USE_MOCK) {
       return payload;
     }
 
+    const snapshot = buildProgressSnapshot();
+    const playerId = payload.playerId || snapshot.playerId;
+
+    if (!isServerPlayerId(playerId)) {
+      return null;
+    }
+
     return request("/progress", {
       method: "POST",
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        ...snapshot,
+        playerId,
+        // reset: true = "começar do zero": o servidor SUBSTITUI o progresso
+        // em vez de juntar com o que já estava salvo.
+        ...(payload.reset === true ? { reset: true } : {})
+      })
     });
   },
 

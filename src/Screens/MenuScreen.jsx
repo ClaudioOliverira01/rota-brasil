@@ -78,9 +78,10 @@ function AccessibilityContent({ settings, onToggle }) {
 
 /**
  * Tela inicial do jogo.
- * onNavigate(nomeDaCena) leva o jogador para uma cena do Phaser.
+ *  onStart()        leva o jogador ao jogo (cena de Perfil no Phaser)
+ *  onOpenRanking()  abre a tela de Ranking
  */
-export default function MenuScreen({ onNavigate }) {
+export default function MenuScreen({ onStart, onOpenRanking }) {
   const actionsRef = useRef(null);
 
   const [modal, setModal] = useState(null); // null | "how" | "accessibility"
@@ -130,9 +131,9 @@ export default function MenuScreen({ onNavigate }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [modal]);
 
-  function goTo(sceneName) {
+  function leave(action) {
     AudioManager.stop();
-    onNavigate(sceneName);
+    action();
   }
 
   function toggleSetting(key) {
@@ -165,7 +166,7 @@ export default function MenuScreen({ onNavigate }) {
         <p className="menu__greeting">Olá, explorador!</p>
 
         <nav className="menu__actions" ref={actionsRef} aria-label="Menu principal">
-          <Button icon="▶" onClick={() => goTo("ProfileScene")}>
+          <Button icon="▶" onClick={() => leave(onStart)}>
             Começar
           </Button>
 
@@ -191,7 +192,7 @@ export default function MenuScreen({ onNavigate }) {
             icon="🏆"
             variant="secondary"
             size="sm"
-            onClick={() => goTo("RankingScene")}
+            onClick={() => leave(onOpenRanking)}
           >
             Ranking
           </Button>

@@ -1,0 +1,296 @@
+/* ==========================================================
+   PÁGINA CENTRALIZADA (Perfil e Avatar)
+   ========================================================== */
+.page {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: clamp(1rem, 3vh, 2rem) 1rem 7rem;
+  text-align: center;
+}
+
+.page__header {
+  max-width: 40rem;
+}
+
+.page__title {
+  margin: 0;
+  font-size: clamp(1.9rem, 6vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-title);
+  -webkit-text-stroke: 0.12em #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 0.06em 0 rgba(0, 0, 0, 0.12);
+}
+
+.page__subtitle {
+  margin: 0.5rem 0 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.page__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  width: min(100%, 24rem);
+}
+
+/* ==========================================================
+   FORMULÁRIO
+   ========================================================== */
+.form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(100%, 28rem);
+  padding: 1.25rem 1.5rem 1.5rem;
+  text-align: left;
+  background: var(--color-surface);
+  border: var(--border-w) solid var(--color-title);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.1), 0 16px 32px rgba(0, 0, 0, 0.14);
+}
+
+.field__label {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-title);
+}
+
+.field__input {
+  width: 100%;
+  min-height: 4.25rem;
+  padding: 0 1rem;
+  font: inherit;
+  font-size: 1.6rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-ink);
+  background: var(--color-white);
+  border: var(--border-w) solid var(--color-title);
+  border-radius: var(--radius-md);
+}
+
+.field__input:focus-visible {
+  outline: 5px solid var(--focus-outer);
+  outline-offset: 3px;
+}
+
+.field__input[aria-invalid="true"] {
+  border-color: #b3261e;
+  border-width: 5px;
+}
+
+html[data-high-contrast="true"] .field__input[aria-invalid="true"] {
+  border-color: #000;
+}
+
+.field__hint {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-muted);
+}
+
+/* Altura mínima para o texto não "empurrar" a tela quando aparece */
+.field__message {
+  min-height: 1.6rem;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.field__message--error {
+  font-weight: 700;
+  color: #b3261e;
+}
+
+html[data-high-contrast="true"] .field__message--error {
+  color: #000;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 0.4rem;
+}
+
+/* ==========================================================
+   JANELA COM VÁRIAS OPÇÕES + RESUMO DO PERFIL
+   ========================================================== */
+.modal__footer--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.summary__item {
+  padding: 0.5rem 0.4rem;
+  text-align: center;
+  background: var(--color-white);
+  border: 2px solid var(--btn-light-edge);
+  border-radius: var(--radius-md);
+}
+
+.summary dt {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.summary dd {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-title);
+}
+
+/* ==========================================================
+   ESCOLHA DO PERSONAGEM
+   ========================================================== */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 11.5rem));
+  gap: 1rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.avatar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 13rem;
+  padding: 1rem 0.5rem 0.75rem;
+  font: inherit;
+  color: var(--color-ink);
+  background: var(--color-white);
+  /* Mesma espessura em todos os cartões: ao escolher, só a cor muda
+     (assim a tela não "pula"). */
+  border: 5px solid var(--btn-light-edge);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 6px 0 var(--btn-light-edge), 0 12px 20px rgba(7, 84, 61, 0.18);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.avatar-card:hover {
+  transform: translateY(-3px);
+}
+
+.avatar-card:focus-visible {
+  outline: 5px solid var(--focus-outer);
+  outline-offset: 3px;
+}
+
+.avatar-card--selected {
+  background: var(--color-on-bg);
+  border-color: var(--btn-primary-bg);
+  box-shadow: 0 6px 0 var(--btn-primary-edge), 0 12px 20px rgba(7, 84, 61, 0.25);
+}
+
+.avatar-card__emoji {
+  font-size: 4rem;
+  line-height: 1.1;
+}
+
+.avatar-card__name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-title);
+}
+
+.avatar-card__description {
+  font-size: 1rem;
+  color: var(--color-muted);
+}
+
+/* O "escolhido" aparece em TEXTO, não só na cor da borda */
+.avatar-card__badge {
+  margin-top: auto;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--btn-primary-fg);
+  background: var(--btn-primary-bg);
+  border-radius: var(--radius-pill);
+}
+
+.avatar-card:not(.avatar-card--selected) .avatar-card__badge {
+  background: transparent;
+}
+
+.avatar-nickname {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+@media (max-width: 34rem) {
+  .avatar-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .avatar-card {
+    min-height: 11rem;
+    padding: 0.75rem 0.25rem 0.6rem;
+  }
+
+  .avatar-card__emoji {
+    font-size: 2.75rem;
+  }
+
+  .avatar-card__name {
+    font-size: 1.2rem;
+  }
+
+  .avatar-card__description {
+    font-size: 0.85rem;
+  }
+
+  .avatar-card__badge {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+  }
+}
+
+/* Celular deitado: as três opções e os botões ficam mais compactos */
+@media (max-height: 560px) and (orientation: landscape) {
+  .page {
+    gap: 0.6rem;
+    padding-bottom: 4rem;
+  }
+
+  .page__title {
+    font-size: 1.8rem;
+  }
+
+  .avatar-card {
+    min-height: 9rem;
+  }
+
+  .avatar-card__emoji {
+    font-size: 2.6rem;
+  }
+}

@@ -119,6 +119,14 @@ export const GameState = {
     state.bonusSeal = seal;
   },
 
+  /**
+   * Junta o progresso vindo do servidor com o que já existe no aparelho.
+   *
+   * Regra: o progresso NUNCA regride. Se o servidor estiver atrasado
+   * (por exemplo, o jogador jogou sem internet), vale o que for maior.
+   * As opções de acessibilidade NÃO vêm do servidor: quem decide é o
+   * aparelho (o que a criança escolheu no menu).
+   */
   applyRemoteProgress(
     progress
   ) {
@@ -126,32 +134,50 @@ export const GameState = {
       return;
     }
 
-    state.currentPhase =
-      Number(
-        progress.currentPhase ||
-          state.currentPhase
-      );
-
-    state.score =
-      Number(
-        progress.score ||
-          0
-      );
-
-    state.stars =
-      Number(
-        progress.stars ||
-          0
-      );
-
-    state.completedPhases =
+    const remotePhases =
       Array.isArray(
         progress.completedPhases
       )
-        ? [
-            ...progress.completedPhases
-          ]
+        ? progress.completedPhases.map(Number)
         : [];
+
+    state.completedPhases =
+      [
+        ...new Set([
+          ...state.completedPhases.map(Number),
+          ...remotePhases
+        ])
+      ].sort(
+        (a, b) => a - b
+      );
+
+    state.currentPhase =
+      Math.max(
+        1,
+        Math.min(
+          4,
+          Math.max(
+            Number(
+              state.currentPhase
+            ) || 1,
+            Number(
+              progress.currentPhase
+            ) || 1
+          )
+        )
+      );
+
+    state.score =
+      Math.max(
+        Number(state.score) || 0,
+        Number(progress.score) || 0
+      );
+
+    state.stars =
+      Math.max(
+        Number(state.stars) || 0,
+        Number(progress.stars) || 0
+      );
 
     if (
       progress.nickname
@@ -165,17 +191,6 @@ export const GameState = {
     ) {
       state.avatar =
         progress.avatar;
-    }
-
-    if (
-      progress.accessibility
-    ) {
-      state.accessibility =
-        {
-          ...state.accessibility,
-
-          ...progress.accessibility
-        };
     }
   },
 

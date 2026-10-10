@@ -10,11 +10,15 @@ const FOCUSABLE =
  *  - leitores de tela a anunciam como diálogo (role="dialog", aria-modal)
  *  - o foco entra na janela, fica preso nela e volta ao botão de origem
  *  - ESC e clique fora fecham
+ *
+ * footer (opcional): botões próprios, no lugar do botão único de fechar.
+ * Use quando a janela precisar de mais de uma opção.
  */
 export default function Modal({
   title,
   onClose,
   closeLabel = "ENTENDI!",
+  footer,
   children
 }) {
   const titleId = useId();
@@ -96,10 +100,16 @@ export default function Modal({
 
         <div className="modal__body">{children}</div>
 
-        <div className="modal__footer">
-          <Button size="md" onClick={onClose}>
-            {closeLabel}
-          </Button>
+        <div
+          className={
+            footer ? "modal__footer modal__footer--stack" : "modal__footer"
+          }
+        >
+          {footer || (
+            <Button size="md" onClick={onClose}>
+              {closeLabel}
+            </Button>
+          )}
         </div>
       </div>
     </div>

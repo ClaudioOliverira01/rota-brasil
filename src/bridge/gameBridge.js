@@ -5,7 +5,10 @@
  */
 export const BRIDGE_EVENTS = Object.freeze({
   // Uma cena do Phaser pediu para voltar ao menu principal
-  MENU_REQUESTED: "menu:requested"
+  MENU_REQUESTED: "menu:requested",
+
+  // Uma cena do Phaser pediu para abrir o ranking (ex.: fim do jogo)
+  RANKING_REQUESTED: "ranking:requested"
 });
 
 const listeners = new Map();
