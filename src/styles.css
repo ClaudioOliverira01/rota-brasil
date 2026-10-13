@@ -3,6 +3,7 @@
 @import "./styles/app.css";
 @import "./styles/ranking.css";
 @import "./styles/profile.css";
+@import "./styles/victory.css";
 
 @font-face {
   font-family: "OpenDyslexic";

@@ -3,9 +3,12 @@ import { useCallback, useEffect, useState } from "react";
 import MenuScreen from "./screens/MenuScreen.jsx";
 import ProfileScreen from "./screens/ProfileScreen.jsx";
 import AvatarScreen from "./screens/AvatarScreen.jsx";
+import CompassScreen from "./screens/CompassScreen.jsx";
+import VictoryScreen from "./screens/VictoryScreen.jsx";
 import RankingScreen from "./screens/RankingScreen.jsx";
 import PhaserStage from "./phaser/PhaserStage.jsx";
 import { gameBridge, BRIDGE_EVENTS } from "./bridge/gameBridge.js";
+import { describeVictory } from "./services/ExpeditionService.js";
 
 const VIEWS = Object.freeze({
   MENU: { name: "menu" },
@@ -16,16 +19,17 @@ const VIEWS = Object.freeze({
 
 /**
  * Controla qual tela está visível:
- *  - menu, profile, avatar, ranking: telas em React
- *  - game: o Phaser (história e fases), começando em entryScene
+ *  - menu, profile, avatar, compass, victory, ranking: telas em React
+ *  - game: o Phaser (história, fases e bônus), começando em entryScene
  *
- * Caminho: menu -> profile -> avatar -> game
+ * Caminho: menu -> profile -> avatar -> game -> (fim da fase) compass
+ *          -> victory -> próxima fase (game) ... -> ranking
+ * O desafio bônus pula a bússola e vai direto para a vitória.
  */
 export default function App() {
   const [view, setView] = useState(VIEWS.MENU);
 
-  // Cenas do Phaser pedem "voltar ao menu" ou "abrir o ranking"
-  // (ex.: ao terminar o jogo): mostramos a tela React correspondente.
+  // O Phaser avisa: voltar ao menu, abrir o ranking ou "terminei a fase".
   useEffect(() => {
     const offMenu = gameBridge.on(BRIDGE_EVENTS.MENU_REQUESTED, () =>
       setView(VIEWS.MENU)
@@ -35,9 +39,20 @@ export default function App() {
       setView(VIEWS.RANKING)
     );
 
+    const offVictory = gameBridge.on(BRIDGE_EVENTS.VICTORY_REQUESTED, data => {
+      const info = describeVictory(data);
+
+      setView(
+        info.bonus
+          ? { name: "victory", info }
+          : { name: "compass", info }
+      );
+    });
+
     return () => {
       offMenu();
       offRanking();
+      offVictory();
     };
   }, []);
 
@@ -59,6 +74,27 @@ export default function App() {
 
     case "avatar":
       content = <AvatarScreen onBack={goToProfile} onReady={goToGame} />;
+      break;
+
+    case "compass":
+      content = (
+        <CompassScreen
+          phase={view.info.phase}
+          onContinue={() => setView({ name: "victory", info: view.info })}
+        />
+      );
+      break;
+
+    case "victory":
+      content = (
+        <VictoryScreen
+          info={view.info}
+          onNextPhase={nextPhase => goToGame(`Phase${nextPhase}Scene`)}
+          onPlayBonus={() => goToGame("BonusScene")}
+          onFinish={goToRanking}
+          onMenu={goToMenu}
+        />
+      );
       break;
 
     case "ranking":

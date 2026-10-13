@@ -8,7 +8,10 @@ export const BRIDGE_EVENTS = Object.freeze({
   MENU_REQUESTED: "menu:requested",
 
   // Uma cena do Phaser pediu para abrir o ranking (ex.: fim do jogo)
-  RANKING_REQUESTED: "ranking:requested"
+  RANKING_REQUESTED: "ranking:requested",
+
+  // Uma fase (ou o bônus) terminou. Leva junto: { phase, final, bonus }
+  VICTORY_REQUESTED: "victory:requested"
 });
 
 const listeners = new Map();
