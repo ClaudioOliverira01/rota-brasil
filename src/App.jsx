@@ -5,6 +5,7 @@ import ProfileScreen from "./screens/ProfileScreen.jsx";
 import AvatarScreen from "./screens/AvatarScreen.jsx";
 import CompassScreen from "./screens/CompassScreen.jsx";
 import VictoryScreen from "./screens/VictoryScreen.jsx";
+import BonusScreen from "./screens/BonusScreen.jsx";
 import RankingScreen from "./screens/RankingScreen.jsx";
 import PhaserStage from "./phaser/PhaserStage.jsx";
 import { gameBridge, BRIDGE_EVENTS } from "./bridge/gameBridge.js";
@@ -14,13 +15,14 @@ const VIEWS = Object.freeze({
   MENU: { name: "menu" },
   PROFILE: { name: "profile" },
   AVATAR: { name: "avatar" },
+  BONUS: { name: "bonus" },
   RANKING: { name: "ranking" }
 });
 
 /**
  * Controla qual tela está visível:
- *  - menu, profile, avatar, compass, victory, ranking: telas em React
- *  - game: o Phaser (história, fases e bônus), começando em entryScene
+ *  - menu, profile, avatar, compass, victory, bonus, ranking: telas em React
+ *  - game: o Phaser (história e fases), começando em entryScene
  *
  * Caminho: menu -> profile -> avatar -> game -> (fim da fase) compass
  *          -> victory -> próxima fase (game) ... -> ranking
@@ -60,6 +62,7 @@ export default function App() {
   const goToProfile = useCallback(() => setView(VIEWS.PROFILE), []);
   const goToAvatar = useCallback(() => setView(VIEWS.AVATAR), []);
   const goToRanking = useCallback(() => setView(VIEWS.RANKING), []);
+  const goToBonus = useCallback(() => setView(VIEWS.BONUS), []);
   const goToGame = useCallback(
     entryScene => setView({ name: "game", entryScene }),
     []
@@ -90,9 +93,23 @@ export default function App() {
         <VictoryScreen
           info={view.info}
           onNextPhase={nextPhase => goToGame(`Phase${nextPhase}Scene`)}
-          onPlayBonus={() => goToGame("BonusScene")}
+          onPlayBonus={goToBonus}
           onFinish={goToRanking}
           onMenu={goToMenu}
+        />
+      );
+      break;
+
+    case "bonus":
+      content = (
+        <BonusScreen
+          onExit={goToMenu}
+          onFinish={() =>
+            setView({
+              name: "victory",
+              info: describeVictory({ phase: 4, bonus: true, final: true })
+            })
+          }
         />
       );
       break;

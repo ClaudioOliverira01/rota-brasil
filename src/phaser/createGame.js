@@ -13,7 +13,6 @@ import { Phase1Scene } from "../scenes/Phase1Scene.js";
 import Phase2Scene from "../scenes/Phase2Scene.js";
 import { Phase3Scene } from "../scenes/Phase3Scene.js";
 import { Phase4Scene } from "../scenes/Phase4Scene.js";
-import { BonusScene } from "../scenes/BonusScene.js";
 import { BridgeVictoryScene } from "./BridgeVictoryScene.js";
 import { BridgeRankingScene } from "./BridgeRankingScene.js";
 
@@ -22,8 +21,8 @@ import { BridgeRankingScene } from "./BridgeRankingScene.js";
  * Arquivo sem React: quem decide QUANDO criar e destruir o jogo
  * é o componente PhaserStage.
  *
- * Menu, Perfil, Avatar, Bússola, Vitória e Ranking são telas em React.
- * O Phaser cuida só da história, das fases e do desafio bônus.
+ * Menu, Perfil, Avatar, Bússola, Vitória, Ranking e o desafio bônus são
+ * telas em React. O Phaser cuida só da história e das fases.
  *
  * entryScene: cena em que o jogo deve começar depois do carregamento
  * (StoryScene ou a fase em que o jogador parou).
@@ -75,7 +74,6 @@ export function createGame(parent, { entryScene = "StoryScene" } = {}) {
       Phase2Scene,
       Phase3Scene,
       Phase4Scene,
-      BonusScene,
       BridgeVictoryScene,
       BridgeRankingScene
     ]
