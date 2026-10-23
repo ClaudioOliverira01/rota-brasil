@@ -1,0 +1,119 @@
+/* ARQUIVO: src/styles/scenery.css  (CRIAR) */
+/* ==========================================================
+   CENÁRIO DE FUNDO (céu, sol, nuvens, morros e arbustos)
+   Só enfeite: fica atrás de tudo e não recebe toques.
+   Usa ".screen" na frente de cada regra para valer sobre o cenário antigo
+   do app.css, sem depender da ordem dos arquivos.
+   ========================================================== */
+.screen .decor {
+  background:
+    radial-gradient(120% 55% at 50% 100%, rgba(255, 244, 205, 0.7) 0, transparent 62%),
+    linear-gradient(180deg, #7fd6ff 0%, #b6ebff 55%, #e0f8ee 100%);
+}
+
+/* ---------- sol ---------- */
+.screen .decor__sun {
+  top: 5vmin;
+  right: 7vmin;
+  width: clamp(4.5rem, 13vmin, 8rem);
+  background: radial-gradient(circle at 35% 30%, #fff6bd 0%, #ffd873 55%, #ffbf4d 100%);
+  box-shadow:
+    0 0 0 0.8rem rgba(255, 224, 130, 0.38),
+    0 0 0 1.8rem rgba(255, 224, 130, 0.2),
+    0 0 3.5rem 1rem rgba(255, 214, 102, 0.45);
+  animation: scenery-glow 6s ease-in-out infinite alternate;
+}
+
+/* ---------- nuvens (duas, bem fofas) ---------- */
+.screen .decor::before,
+.screen .decor::after {
+  content: "";
+  position: absolute;
+  width: 10rem;
+  height: 4.6rem;
+  background:
+    radial-gradient(circle at 22% 68%, #fff 0 1.1rem, rgba(255, 255, 255, 0) calc(1.1rem + 0.5px)),
+    radial-gradient(circle at 45% 48%, #fff 0 1.7rem, rgba(255, 255, 255, 0) calc(1.7rem + 0.5px)),
+    radial-gradient(circle at 72% 66%, #fff 0 1.3rem, rgba(255, 255, 255, 0) calc(1.3rem + 0.5px)),
+    radial-gradient(circle at 12% 80%, #fff 0 0.9rem, rgba(255, 255, 255, 0) calc(0.9rem + 0.5px)),
+    radial-gradient(circle at 88% 80%, #fff 0 0.9rem, rgba(255, 255, 255, 0) calc(0.9rem + 0.5px)),
+    linear-gradient(#fff, #fff) 50% 100% / calc(100% - 1.8rem) 1.8rem no-repeat;
+  opacity: 0.92;
+  filter: drop-shadow(0 6px 8px rgba(40, 120, 160, 0.12));
+  transform: scale(var(--cloud-scale, 1));
+}
+
+.screen .decor::before {
+  top: 8vmin;
+  left: 6vmin;
+  animation: scenery-drift 70s linear infinite alternate;
+}
+
+.screen .decor::after {
+  --cloud-scale: 0.75;
+  top: 36vmin;
+  right: 22vmin;
+  opacity: 0.8;
+  animation: scenery-drift 90s linear infinite alternate-reverse;
+}
+
+/* ---------- morros ---------- */
+.screen .decor__hill {
+  background: linear-gradient(180deg, #c3f2cb 0%, #93deaa 100%);
+}
+
+.screen .decor__hill--right {
+  background: linear-gradient(180deg, #aeeabd 0%, #7fd49b 100%);
+}
+
+/* ---------- arbustos: duas fileiras redondinhas ---------- */
+.screen .decor__bushes {
+  bottom: -2.8rem;
+  height: 7.5rem;
+  background-image:
+    radial-gradient(circle at 50% 50%, #34c78d 0 2.9rem, transparent calc(2.9rem + 1px)),
+    radial-gradient(circle at 50% 50%, #5ee0ae 0 2.5rem, transparent calc(2.5rem + 1px));
+  background-size: 6.4rem 7.5rem, 6.4rem 7.5rem;
+  background-position: 0 0, 3.2rem 1.1rem;
+  background-repeat: repeat-x;
+}
+
+@keyframes scenery-glow {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
+@keyframes scenery-drift {
+  from { transform: translateX(0) scale(var(--cloud-scale, 1)); }
+  to { transform: translateX(14vmin) scale(var(--cloud-scale, 1)); }
+}
+
+/* Menos movimento: nuvens e sol ficam parados */
+html[data-reduced-motion="true"] .screen .decor::before,
+html[data-reduced-motion="true"] .screen .decor::after,
+html[data-reduced-motion="true"] .screen .decor__sun {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen .decor::before,
+  .screen .decor::after,
+  .screen .decor__sun {
+    animation: none;
+  }
+}
+
+/* Celular: nuvens menores */
+@media (max-width: 40rem) {
+  .screen .decor::before {
+    --cloud-scale: 0.7;
+    top: 5vmin;
+    left: -1rem;
+  }
+
+  .screen .decor::after {
+    --cloud-scale: 0.55;
+    top: 52vmin;
+    right: 2rem;
+  }
+}

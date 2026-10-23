@@ -1,0 +1,144 @@
+/* ARQUIVO: src/styles/credits.css  (SUBSTITUIR o conteúdo inteiro) */
+/* ==========================================================
+   TELA DE CRÉDITOS
+   ========================================================== */
+.credits {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: clamp(1rem, 3vh, 2rem) 1rem 5rem;
+}
+
+.credits__header {
+  text-align: center;
+  max-width: 40rem;
+}
+
+.credits__title {
+  margin: 0;
+  font-size: clamp(1.9rem, 6vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-title);
+  -webkit-text-stroke: 0.12em #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 0.06em 0 rgba(0, 0, 0, 0.12);
+}
+
+.credits__title:focus {
+  outline: none;
+}
+
+.credits__subtitle {
+  margin: 0.4rem 0 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.credits__intro {
+  margin: 0.4rem 0 0;
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+/* ---------- universidade e integrantes ---------- */
+.team {
+  width: min(100%, 52rem);
+  text-align: center;
+}
+
+.team__logo {
+  display: block;
+  max-width: min(100%, 26rem);
+  max-height: 10rem;
+  margin: 0 auto 0.75rem;
+  object-fit: contain;
+}
+
+/* Imagem quadrada com margens brancas: mostra só a faixa do meio (o logo). */
+.team__logo--trim {
+  width: min(100%, 26rem);
+  height: auto;
+  max-height: none;
+  aspect-ratio: 3.6 / 1;
+  object-fit: cover;
+  object-position: center;
+}
+
+.team__text {
+  margin: 0 0 0.75rem;
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+.team__subtitle {
+  margin: 0 0 0.6rem;
+  font-size: var(--text-lg);
+  color: var(--color-title);
+}
+
+.team__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.6rem;
+}
+
+.team__member {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-on-bg);
+  border: 2px solid var(--color-on-border);
+  border-radius: var(--radius-md);
+}
+
+.team__name {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.team__rgm {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+/* ---------- listas de créditos ---------- */
+.credits__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.25rem;
+  width: min(100%, 68rem);
+}
+
+.credits__list {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.credits__item dt {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.credits__item dd {
+  margin: 0.1rem 0 0;
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.credits__footer {
+  width: min(100%, 22rem);
+}

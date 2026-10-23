@@ -1,3 +1,4 @@
+// ARQUIVO: src/App.jsx  (SUBSTITUIR o conteúdo inteiro)
 import { useCallback, useState } from "react";
 
 import MenuScreen from "./screens/MenuScreen.jsx";
@@ -9,21 +10,24 @@ import BonusScreen from "./screens/BonusScreen.jsx";
 import RankingScreen from "./screens/RankingScreen.jsx";
 import PhaseScreen from "./screens/PhaseScreen.jsx";
 import StoryScreen from "./screens/StoryScreen.jsx";
+import CreditsScreen from "./screens/CreditsScreen.jsx";
 import { describeVictory } from "./services/ExpeditionService.js";
 import { viewForEntry, viewForVictory } from "./services/FlowRouter.js";
+import "./styles/scenery.css";
 
 const VIEWS = Object.freeze({
   MENU: { name: "menu" },
   PROFILE: { name: "profile" },
   AVATAR: { name: "avatar" },
   BONUS: { name: "bonus" },
-  RANKING: { name: "ranking" }
+  RANKING: { name: "ranking" },
+  CREDITS: { name: "credits" }
 });
 
 /**
  * Controla qual tela está visível. Todo o jogo é React:
  *  menu, profile, avatar, story, phase (Fases 1 a 4), compass, victory,
- *  bonus e ranking.
+ *  bonus, ranking e credits.
  *
  * Caminho: menu -> profile -> avatar -> story -> fase 1 -> compass
  *          -> victory -> próxima fase ... -> ranking
@@ -36,6 +40,7 @@ export default function App() {
   const goToProfile = useCallback(() => setView(VIEWS.PROFILE), []);
   const goToAvatar = useCallback(() => setView(VIEWS.AVATAR), []);
   const goToRanking = useCallback(() => setView(VIEWS.RANKING), []);
+  const goToCredits = useCallback(() => setView(VIEWS.CREDITS), []);
   const goToBonus = useCallback(() => setView(VIEWS.BONUS), []);
   // Traduz o nome de cena usado pelo resto do jogo para a tela certa.
   const goToGame = useCallback(
@@ -93,6 +98,10 @@ export default function App() {
       content = <RankingScreen onBack={goToMenu} />;
       break;
 
+    case "credits":
+      content = <CreditsScreen onBack={goToMenu} />;
+      break;
+
     case "phase":
       content = (
         <PhaseScreen
@@ -114,7 +123,13 @@ export default function App() {
       break;
 
     default:
-      content = <MenuScreen onStart={goToProfile} onOpenRanking={goToRanking} />;
+      content = (
+        <MenuScreen
+          onStart={goToProfile}
+          onOpenRanking={goToRanking}
+          onOpenCredits={goToCredits}
+        />
+      );
   }
 
   return (

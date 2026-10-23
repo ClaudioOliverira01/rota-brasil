@@ -1,8 +1,11 @@
+// ARQUIVO: src/screens/MenuScreen.jsx  (SUBSTITUIR o conteúdo inteiro)
 import { useEffect, useRef, useState } from "react";
 
 import Button from "../components/Button.jsx";
 import Modal from "../components/Modal.jsx";
 import Switch from "../components/Switch.jsx";
+import CruzeiroDoSul from "../components/CruzeiroDoSul.jsx";
+import "../styles/credits.css";
 import { AccessibilityManager } from "../systems/AccessibilityManager.js";
 import { AudioManager } from "../systems/AudioManager.js";
 
@@ -78,10 +81,11 @@ function AccessibilityContent({ settings, onToggle }) {
 
 /**
  * Tela inicial do jogo.
- *  onStart()        leva o jogador ao jogo (cena de Perfil no Phaser)
- *  onOpenRanking()  abre a tela de Ranking
+ *  onStart()         vai para o perfil (começar a jogar)
+ *  onOpenRanking()   abre o ranking
+ *  onOpenCredits()   abre os créditos
  */
-export default function MenuScreen({ onStart, onOpenRanking }) {
+export default function MenuScreen({ onStart, onOpenRanking, onOpenCredits }) {
   const actionsRef = useRef(null);
 
   const [modal, setModal] = useState(null); // null | "how" | "accessibility"
@@ -195,6 +199,15 @@ export default function MenuScreen({ onStart, onOpenRanking }) {
             onClick={() => leave(onOpenRanking)}
           >
             Ranking
+          </Button>
+
+          <Button
+            icon={<CruzeiroDoSul className="cruzeiro-badge" />}
+            variant="light"
+            size="sm"
+            onClick={() => leave(onOpenCredits)}
+          >
+            Créditos
           </Button>
         </nav>
       </div>
