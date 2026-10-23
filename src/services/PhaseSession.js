@@ -12,11 +12,13 @@ import { BONUS_PHASE_KEY } from "../data/bonusData.js";
  * Arquivo SEM React: as telas de jogo só chamam estas funções.
  *
  * Uso típico de uma fase:
- *   startPhase(2);                 // ao abrir a fase
- *   recordAttempt(2);              // a cada tentativa de resposta
- *   recordError(2);                // quando erra
- *   awardCorrect(2, 20);           // quando acerta (+pontos e +estrela)
+ *   const snapshot = snapshotPhase();   // foto do placar antes de começar
+ *   startPhase(2);                      // ao abrir a fase
+ *   recordAttempt(2);                   // a cada tentativa de resposta
+ *   recordError(2);                     // quando erra
+ *   awardCorrect(2, 20);                // quando acerta (+pontos e +estrela)
  *   const victory = await completePhase(2);   // ao terminar
+ *   restorePhase(snapshot);             // se sair/reiniciar no meio
  */
 
 export const FINAL_PHASE = 4;
@@ -56,6 +58,27 @@ async function syncProgress() {
 /** Contadores desta fase (erros, tentativas, tempo e pontos DELA). */
 export function getPhaseStats(phase) {
   return GameMetrics.get().phases?.[phase] || EMPTY_STATS;
+}
+
+/**
+ * Foto do placar (pontos e estrelas) ANTES de a fase começar.
+ * Serve para desfazer os pontos se a criança sair ou recomeçar no meio:
+ * sem isso, ao jogar a fase de novo ela somaria os pontos duas vezes.
+ */
+export function snapshotPhase() {
+  const state = GameState.get();
+
+  return { score: state.score, stars: state.stars };
+}
+
+/** Volta o placar para a foto tirada por snapshotPhase(). */
+export function restorePhase(snapshot) {
+  const state = GameState.get();
+
+  state.score = snapshot.score;
+  state.stars = snapshot.stars;
+
+  ProgressManager.save();
 }
 
 /** Cada vez que a fase abre é uma partida nova: os contadores zeram. */

@@ -43,7 +43,6 @@ function RankingRow({ row, place, isMe }) {
 
       <span className="rank-row__name">
         {row.nickname}
-        {isMe ? " " : null}
         {isMe ? <span className="tag tag--me">VOCÊ</span> : null}
       </span>
 
@@ -132,6 +131,13 @@ function PhaseErrorsPanel({ stats }) {
 
   return (
     <>
+      {stats.status === "local" ? (
+        <p className="notice notice--warning" role="status">
+          O servidor não respondeu. Estes números são só dos jogadores deste
+          aparelho.
+        </p>
+      ) : null}
+
       <ul className="phase-list">
         {stats.phases.map(item => {
           const info = PHASES.find(phase => phase.id === item.phase);

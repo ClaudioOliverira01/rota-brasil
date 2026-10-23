@@ -51,6 +51,55 @@ function readLocalRanking(limit) {
     .slice(0, limit);
 }
 
+const METRICS_PREFIX = "rota-brasil-metrics-v2-";
+
+/**
+ * Plano B das estatísticas: soma os erros e as tentativas guardados NESTE
+ * aparelho (cada jogador local tem as suas métricas salvas). Devolve null
+ * quando ainda não há nada registrado.
+ */
+function readLocalPhaseStats() {
+  const totals = {};
+
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+
+      if (!key || !key.startsWith(METRICS_PREFIX)) {
+        continue;
+      }
+
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+
+      PHASE_IDS.forEach(phase => {
+        const item = saved?.phases?.[phase];
+
+        if (!item) {
+          return;
+        }
+
+        totals[phase] = totals[phase] || { phase, totalErrors: 0, totalAttempts: 0 };
+        totals[phase].totalErrors += toNumber(item.errors);
+        totals[phase].totalAttempts += toNumber(item.attempts);
+      });
+    }
+  } catch {
+    return null;
+  }
+
+  const phases = Object.values(totals);
+
+  if (phases.length === 0) {
+    return null;
+  }
+
+  const hardest = phases.reduce((best, item) =>
+    item.totalErrors > best.totalErrors ? item : best
+  );
+
+  return { phases, mostErrorsPhase: hardest.phase };
+}
+
 /**
  * A API devolve só as fases que já tiveram resultados.
  * Aqui completamos as 4 fases, para a tela sempre mostrar todas.
@@ -86,7 +135,8 @@ function normalizeStats(data) {
  *
  * ranking.status: "loading" | "ready" | "offline"
  *   offline = o servidor não respondeu; mostramos os jogadores locais.
- * stats.status:   "loading" | "ready" | "error"
+ * stats.status:   "loading" | "ready" | "local" | "error"
+ *   local = o servidor não respondeu; somamos os erros salvos neste aparelho.
  */
 export function useRanking(limit = DEFAULT_LIMIT) {
   const [attempt, setAttempt] = useState(0);
@@ -139,9 +189,17 @@ export function useRanking(limit = DEFAULT_LIMIT) {
       .catch(error => {
         console.warn("Estatísticas por fase indisponíveis.", error);
 
-        if (!cancelled) {
-          setStats({ status: "error", phases: [], maxErrors: 0, mostErrorsPhase: null });
+        if (cancelled) {
+          return;
         }
+
+        const local = readLocalPhaseStats();
+
+        setStats(
+          local
+            ? { status: "local", ...normalizeStats(local) }
+            : { status: "error", phases: [], maxErrors: 0, mostErrorsPhase: null }
+        );
       });
 
     return () => {

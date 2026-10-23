@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import MenuScreen from "./screens/MenuScreen.jsx";
 import ProfileScreen from "./screens/ProfileScreen.jsx";
@@ -7,9 +7,10 @@ import CompassScreen from "./screens/CompassScreen.jsx";
 import VictoryScreen from "./screens/VictoryScreen.jsx";
 import BonusScreen from "./screens/BonusScreen.jsx";
 import RankingScreen from "./screens/RankingScreen.jsx";
-import PhaserStage from "./phaser/PhaserStage.jsx";
-import { gameBridge, BRIDGE_EVENTS } from "./bridge/gameBridge.js";
+import PhaseScreen from "./screens/PhaseScreen.jsx";
+import StoryScreen from "./screens/StoryScreen.jsx";
 import { describeVictory } from "./services/ExpeditionService.js";
+import { viewForEntry, viewForVictory } from "./services/FlowRouter.js";
 
 const VIEWS = Object.freeze({
   MENU: { name: "menu" },
@@ -20,51 +21,25 @@ const VIEWS = Object.freeze({
 });
 
 /**
- * Controla qual tela está visível:
- *  - menu, profile, avatar, compass, victory, bonus, ranking: telas em React
- *  - game: o Phaser (história e fases), começando em entryScene
+ * Controla qual tela está visível. Todo o jogo é React:
+ *  menu, profile, avatar, story, phase (Fases 1 a 4), compass, victory,
+ *  bonus e ranking.
  *
- * Caminho: menu -> profile -> avatar -> game -> (fim da fase) compass
- *          -> victory -> próxima fase (game) ... -> ranking
+ * Caminho: menu -> profile -> avatar -> story -> fase 1 -> compass
+ *          -> victory -> próxima fase ... -> ranking
  * O desafio bônus pula a bússola e vai direto para a vitória.
  */
 export default function App() {
   const [view, setView] = useState(VIEWS.MENU);
-
-  // O Phaser avisa: voltar ao menu, abrir o ranking ou "terminei a fase".
-  useEffect(() => {
-    const offMenu = gameBridge.on(BRIDGE_EVENTS.MENU_REQUESTED, () =>
-      setView(VIEWS.MENU)
-    );
-
-    const offRanking = gameBridge.on(BRIDGE_EVENTS.RANKING_REQUESTED, () =>
-      setView(VIEWS.RANKING)
-    );
-
-    const offVictory = gameBridge.on(BRIDGE_EVENTS.VICTORY_REQUESTED, data => {
-      const info = describeVictory(data);
-
-      setView(
-        info.bonus
-          ? { name: "victory", info }
-          : { name: "compass", info }
-      );
-    });
-
-    return () => {
-      offMenu();
-      offRanking();
-      offVictory();
-    };
-  }, []);
 
   const goToMenu = useCallback(() => setView(VIEWS.MENU), []);
   const goToProfile = useCallback(() => setView(VIEWS.PROFILE), []);
   const goToAvatar = useCallback(() => setView(VIEWS.AVATAR), []);
   const goToRanking = useCallback(() => setView(VIEWS.RANKING), []);
   const goToBonus = useCallback(() => setView(VIEWS.BONUS), []);
+  // Traduz o nome de cena usado pelo resto do jogo para a tela certa.
   const goToGame = useCallback(
-    entryScene => setView({ name: "game", entryScene }),
+    entryScene => setView(viewForEntry(entryScene)),
     []
   );
 
@@ -118,8 +93,24 @@ export default function App() {
       content = <RankingScreen onBack={goToMenu} />;
       break;
 
-    case "game":
-      content = <PhaserStage entryScene={view.entryScene} />;
+    case "phase":
+      content = (
+        <PhaseScreen
+          key={view.phase}
+          phase={view.phase}
+          onComplete={info => setView(viewForVictory(describeVictory(info)))}
+          onMenu={goToMenu}
+        />
+      );
+      break;
+
+    case "story":
+      content = (
+        <StoryScreen
+          onStart={() => setView({ name: "phase", phase: 1 })}
+          onMenu={goToMenu}
+        />
+      );
       break;
 
     default:

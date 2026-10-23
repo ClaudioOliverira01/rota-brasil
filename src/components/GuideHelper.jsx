@@ -22,16 +22,18 @@ function sideFor(phaseId, position) {
  *  - O balão se recolhe sozinho para não atrapalhar o jogo; tocar de novo
  *    reabre a dica atual.
  *
- *  phaseId   1 a 4 = fases, 5 = bônus (as dicas vêm de data/guideData.js)
- *  position  "left" | "right" (padrão: o que estiver em guideData.js)
+ *  phaseId    1 a 4 = fases, 5 = bônus (as dicas vêm de data/guideData.js)
+ *  position   "left" | "right" (padrão: o que estiver em guideData.js)
+ *  startOpen  false = o balão começa fechado e o "?" pulsa (use em telas
+ *             cheias, onde o balão cobriria os cartões)
  */
-export default function GuideHelper({ phaseId, position }) {
+export default function GuideHelper({ phaseId, position, startOpen = true }) {
   const tips = GUIDE_TIPS[phaseId] || GUIDE_TIPS[1];
   const side = sideFor(phaseId, position);
   const avatar = getAvatar(GameState.get().avatar);
 
   const [index, setIndex] = useState(0);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(startOpen);
   const hideTimer = useRef(null);
 
   const scheduleHide = useCallback(() => {
@@ -44,10 +46,12 @@ export default function GuideHelper({ phaseId, position }) {
   }, []);
 
   useEffect(() => {
-    scheduleHide();
+    if (startOpen) {
+      scheduleHide();
+    }
 
     return () => window.clearTimeout(hideTimer.current);
-  }, [scheduleHide]);
+  }, [scheduleHide, startOpen]);
 
   function handleClick() {
     // Balão fechado: reabre a dica atual. Aberto: avança para a próxima.

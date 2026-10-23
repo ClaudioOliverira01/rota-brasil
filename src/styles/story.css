@@ -1,0 +1,128 @@
+/* ==========================================================
+   ABERTURA DA HISTÓRIA
+   ========================================================== */
+.story {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 100%;
+  padding: 0.75rem 1rem 2rem;
+  text-align: center;
+}
+
+.story__top {
+  align-self: flex-start;
+}
+
+.story__top .btn {
+  width: auto;
+  min-width: 6.5rem;
+}
+
+.story__title {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-title);
+  -webkit-text-stroke: 0.12em #fff;
+  paint-order: stroke fill;
+}
+
+.story__title:focus {
+  outline: none;
+}
+
+.story__hero {
+  display: grid;
+  place-items: center;
+  width: clamp(6.5rem, 22vmin, 10rem);
+  aspect-ratio: 1;
+  font-size: clamp(4rem, 14vmin, 6.5rem);
+  line-height: 1;
+  background: var(--color-white);
+  border: var(--border-w) solid var(--btn-primary-bg);
+  border-radius: 50%;
+  box-shadow: 0 0.4rem 0 var(--btn-primary-edge);
+  animation: story-float 3s ease-in-out infinite;
+}
+
+.story__name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-title);
+}
+
+.story__bubble {
+  width: min(100%, 44rem);
+  padding: 1rem 1.25rem;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: var(--border-w) solid var(--btn-primary-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0.35rem 0 var(--btn-primary-edge);
+}
+
+.story__bubble p {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.1rem, 2.6vw, 1.4rem);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.story__bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.story__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.story__actions .btn {
+  width: auto;
+  min-width: 12rem;
+}
+
+@keyframes story-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.4rem); }
+}
+
+html[data-reduced-motion="true"] .story__hero {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story__hero {
+    animation: none;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .story {
+    gap: 0.4rem;
+    padding-bottom: 1rem;
+  }
+
+  .story__hero {
+    width: 4.5rem;
+    font-size: 2.8rem;
+  }
+
+  .story__bubble {
+    padding: 0.6rem 1rem;
+  }
+
+  .story__bubble p {
+    margin-bottom: 0.3rem;
+    font-size: 1rem;
+  }
+}
