@@ -167,6 +167,10 @@ export const ProgressManager = {
 
         reducedMotion:
           state.accessibility?.reducedMotion ??
+          false,
+
+        dyslexiaFont:
+          state.accessibility?.dyslexiaFont ??
           false
 
       },
@@ -298,6 +302,10 @@ export const ProgressManager = {
 
       reducedMotion:
         previousAccessibility.reducedMotion ??
+        false,
+
+      dyslexiaFont:
+        previousAccessibility.dyslexiaFont ??
         false
 
     });
@@ -341,6 +349,56 @@ export const ProgressManager = {
 
 
     return GameState.get();
+  },
+
+
+  /**
+   * Troca o ID do perfil atual (ex.: o servidor não conhece mais o ID
+   * antigo e um novo jogador foi criado). Mantém progresso e métricas e
+   * não deixa um perfil duplicado para trás.
+   */
+  relinkPlayerId(newPlayerId) {
+
+    const state =
+      GameState.get();
+
+    const oldPlayerId =
+      state.playerId;
+
+    if (
+      !newPlayerId ||
+      newPlayerId === oldPlayerId
+    ) {
+      return this.save();
+    }
+
+    const profiles =
+      this
+        .getProfiles()
+        .filter(
+          profile =>
+            profile.playerId !==
+            oldPlayerId
+        );
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(profiles)
+    );
+
+    localStorage.removeItem(
+      `rota-brasil-metrics-v2-${
+        String(oldPlayerId || "")
+          .trim()
+          .toLowerCase()
+      }`
+    );
+
+    state.playerId =
+      newPlayerId;
+
+    // Grava o perfil e as métricas (que estão em memória) com o novo ID.
+    return this.save();
   },
 
 

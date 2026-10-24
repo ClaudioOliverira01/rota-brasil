@@ -1,86 +1,55 @@
-# Rota Brasil — Frontend Etapa 1
+# Rota Brasil — Frontend
 
-Frontend do jogo educativo **Rota Brasil: A Expedição de Aê**.
+Jogo educativo **Rota Brasil: A Expedição de Aê** (Geografia do Brasil, BNCC 4º/5º ano).
 
 ## Stack
 
-- Phaser 3
-- JavaScript ES6+
-- HTML5
-- CSS3
-- Vite
+- React 18 + Vite 6 (JavaScript ES2022, sem TypeScript)
+- CSS próprio (design tokens em `src/styles/tokens.css`)
+- Narração com `SpeechSynthesis` do navegador
+- Integração com a API Rota Brasil (pasta `../backend`)
 
-## O que já está funcionando
-
-- Menu inicial
-- Tela de escolha de avatar
-- Apelido genérico
-- Introdução da história
-- Fase 1 jogável
-- Drag-and-drop dos pontos cardeais
-- Feedback positivo para acerto
-- Feedback orientativo para erro
-- Pontuação
-- Estrelas
-- Persistência local via LocalStorage
-- Camada `ApiService` preparada para integração com o backend
-- Narração usando `SpeechSynthesis` do navegador
-- Layout responsivo via Phaser Scale FIT
-
-## Como executar
-
-Abra o terminal dentro desta pasta e rode:
+## Executar
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env      # ajuste VITE_API_BASE_URL se preciso
+npm run dev               # http://localhost:5173
 ```
 
-Depois abra o endereço mostrado pelo Vite, normalmente:
+O backend precisa estar rodando (veja o README na raiz do projeto).
 
-```text
-http://localhost:5173
-```
+Outros comandos:
 
-## Integração com o backend
+| Comando | O que faz |
+|---|---|
+| `npm run build` | build de produção em `dist/` |
+| `npm run preview` | serve o build para conferência |
+| `npm run check:imports` | confere se todos os imports existem no Git com a grafia exata (simula o Linux da Vercel) |
 
-Por padrão:
+## Como o frontend usa a API
 
-```env
-VITE_USE_MOCK=true
-```
+Toda chamada HTTP está em **`src/services/ApiService.js`** (URL base vinda de `VITE_API_BASE_URL`). As telas não chamam a API diretamente: usam os serviços.
 
-Isso permite desenvolver o jogo mesmo enquanto o backend está sendo construído.
+| Serviço | Momento | Endpoint |
+|---|---|---|
+| `PlayerSession.identifyPlayer` | digitou o apelido | `GET /players?nickname=` e, se novo, `POST /players` |
+| `PlayerSession.beginAdventure` | escolheu o avatar | `PATCH /players/:id` (se mudou) e `POST /progress` |
+| `PlayerSession.restartFromZero` | "Começar do zero" | `DELETE /players/:id/progress` |
+| `PhaseSession.completePhase` | terminou uma fase | `POST /progress/phases` e `POST /progress` |
+| `PhaseSession.completeBonus` | terminou o bônus | `POST /progress` (com `bonusCompleted`/`bonusSeal`) |
+| `ExpeditionService.downloadReport` | "Gerar relatório em PDF" | `GET /reports/:id/pdf` |
+| `ExpeditionService.finishExpedition` | "Finalizar jogo" | `POST /progress` |
+| `useRanking` | tela de Ranking | `GET /ranking` e `GET /stats/phases` |
 
-Quando o responsável pelo backend entregar os endpoints, altere:
+O progresso enviado vem sempre de `ProgressSnapshot.js` (retrato completo do estado), e o servidor consolida sem deixar regredir.
 
-```env
-VITE_USE_MOCK=false
-VITE_API_BASE_URL=http://localhost:3333/api
-```
+### Sem conexão
 
-Os endpoints atualmente previstos no frontend estão concentrados exclusivamente em:
+Se a API não responder, o jogo continua: o progresso fica no navegador (localStorage), o ranking mostra os jogadores do aparelho com um aviso e o PDF é gerado localmente (`ReportService.js`). Quando um perfil do aparelho tem um ID que o servidor não conhece mais (banco trocado), o jogador é recriado e o progresso local é reenviado.
 
-```text
-src/services/ApiService.js
-```
-
-Assim, as cenas do jogo não precisam conhecer detalhes do banco ou do Express.
+`VITE_USE_MOCK=true` desliga a API de propósito (desenvolvimento só da interface).
 
 ## Importante
 
-Não coloque as credenciais do Supabase no frontend. O frontend deve conversar com a API do backend, e o backend é quem deve acessar o banco.
-
-## Próxima etapa
-
-Depois de validar esta base:
-
-1. transformar a Fase 1 em uma experiência visual mais rica;
-2. adicionar assets do Aê;
-3. adicionar mapa estilizado;
-4. implementar Fase 2;
-5. implementar Fase 3;
-6. implementar Fase 4;
-7. implementar fase bônus;
-8. completar acessibilidade;
-9. conectar aos endpoints reais do backend.
+Nunca coloque chaves do Supabase no frontend: variáveis `VITE_*` ficam visíveis no navegador. Só o backend acessa o banco.

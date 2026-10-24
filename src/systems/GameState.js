@@ -179,6 +179,18 @@ export const GameState = {
         Number(progress.stars) || 0
       );
 
+    // Bônus: uma vez concluído, continua concluído; dourado vale mais.
+    if (progress.bonusCompleted) {
+      state.bonusCompleted = true;
+
+      if (
+        progress.bonusSeal === "gold" ||
+        (progress.bonusSeal === "silver" && state.bonusSeal !== "gold")
+      ) {
+        state.bonusSeal = progress.bonusSeal;
+      }
+    }
+
     if (
       progress.nickname
     ) {

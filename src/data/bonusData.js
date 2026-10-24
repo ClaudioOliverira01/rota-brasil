@@ -8,6 +8,9 @@ export const BONUS_PHASE_KEY = "bonus";
 
 export const BONUS_POINTS_PER_CORRECT = 15;
 
+// Sons em public/assets/audio/animals/ (créditos em data/credits.js).
+// Se algum arquivo faltar, use sound: null: o AudioManager toca um som
+// sintetizado no lugar.
 export const BONUS_ANIMALS = [
   {
     id: "tucano",

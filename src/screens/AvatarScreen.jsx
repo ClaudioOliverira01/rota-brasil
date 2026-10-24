@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import Button from "../components/Button.jsx";
-import { AVATARS } from "../data/gameData.js";
+import { AVATARS, getAvatar } from "../data/gameData.js";
 import { beginAdventure } from "../services/PlayerSession.js";
 import { AudioManager } from "../systems/AudioManager.js";
 import { GameState } from "../systems/GameState.js";
@@ -83,7 +83,10 @@ export default function AvatarScreen({ onBack, onReady }) {
 
     const entryScene = await beginAdventure(selected);
 
-    AudioManager.speak(`Olá, ${nickname}! A aventura de Aê está começando.`);
+    // A fala usa o companheiro escolhido (Aê, Jagu ou Tuca).
+    const companion = getAvatar(selected).name;
+
+    AudioManager.speak(`Olá, ${nickname}! A aventura com ${companion} está começando.`);
 
     onReady(entryScene);
   }

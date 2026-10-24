@@ -82,6 +82,12 @@ const PDF_TIMEOUT = Number(
   import.meta.env.VITE_PDF_TIMEOUT || 45000
 );
 
+/** Nome do arquivo enviado pelo servidor (Content-Disposition). */
+function filenameFrom(header) {
+  const match = /filename="?([^";]+)"?/i.exec(header || "");
+  return match ? match[1] : null;
+}
+
 async function requestBlob(path, options = {}) {
   const controller = new AbortController();
 
@@ -126,7 +132,10 @@ async function requestBlob(path, options = {}) {
       throw error;
     }
 
-    return await response.blob();
+    return {
+      blob: await response.blob(),
+      filename: filenameFrom(response.headers.get("content-disposition"))
+    };
   } catch (error) {
     if (error?.name === "AbortError") {
       throw new Error(
@@ -167,14 +176,43 @@ export const ApiService = {
     });
   },
 
+  /** Altera o avatar (e/ou apelido) do jogador no servidor. */
+  async updatePlayer(playerId, changes) {
+    if (USE_MOCK || !isServerPlayerId(playerId)) {
+      return null;
+    }
+
+    return request(`/players/${encodeURIComponent(playerId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(changes)
+    });
+  },
+
+  /**
+   * "Começar do zero" no servidor: zera o progresso e apaga os resultados
+   * das fases desse jogador (o jogador continua existindo).
+   */
+  async resetProgress(playerId) {
+    if (USE_MOCK || !isServerPlayerId(playerId)) {
+      return null;
+    }
+
+    return request(`/players/${encodeURIComponent(playerId)}/progress`, {
+      method: "DELETE"
+    });
+  },
+
   async getPlayerByNickname(nickname) {
     if (USE_MOCK) {
       return null;
     }
 
-    return request(
-      `/players/by-nickname/${encodeURIComponent(nickname)}`
+    // A busca devolve [] quando o apelido está livre (sem erro 404 no console).
+    const found = await request(
+      `/players?nickname=${encodeURIComponent(nickname)}`
     );
+
+    return Array.isArray(found) ? found[0] || null : null;
   },
 
   async getProgress(playerId) {
@@ -188,8 +226,11 @@ export const ApiService = {
         accessibility: {
           narration: true,
           highContrast: false,
-          reducedMotion: false
+          reducedMotion: false,
+          dyslexiaFont: false
         },
+        bonusCompleted: false,
+        bonusSeal: null,
         gameStartedAt: null,
         gameCompletedAt: null,
         totalTimeSeconds: 0
@@ -282,7 +323,7 @@ export const ApiService = {
       );
     }
 
-    const blob = await requestBlob(
+    const { blob, filename } = await requestBlob(
       `/reports/${encodeURIComponent(playerId)}/pdf`
     );
 
@@ -293,7 +334,7 @@ export const ApiService = {
 
     triggerDownload(
       blob,
-      "relatorio-rota-brasil.pdf"
+      filename || "relatorio-rota-brasil.pdf"
     );
 
     return true;

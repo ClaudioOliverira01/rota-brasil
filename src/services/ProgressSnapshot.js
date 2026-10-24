@@ -23,6 +23,8 @@ export function buildProgressSnapshot() {
     stars: state.stars,
     completedPhases: [...(state.completedPhases || [])],
     accessibility: { ...(state.accessibility || {}) },
+    bonusCompleted: Boolean(state.bonusCompleted),
+    bonusSeal: state.bonusSeal || null,
     metrics: {
       gameStartedAt: metrics.gameStartedAt,
       gameCompletedAt: metrics.gameCompletedAt,

@@ -1,3 +1,6 @@
+// Sons dos animais: arquivos em public/assets/audio/animals/ (créditos em
+// data/credits.js). Se algum arquivo faltar, use sound: null: o AudioManager
+// toca um som sintetizado no lugar.
 export const AVATARS = [
   { id: "ae", name: "Aê", emoji: "🦜", description: "Tucano explorador", sound: "/assets/audio/animals/tucano.mp3" },
   { id: "onca", name: "Jagu", emoji: "🐆", description: "Onça curiosa", sound: "/assets/audio/animals/onca.mp3" },

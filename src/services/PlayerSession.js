@@ -59,20 +59,24 @@ async function findRemotePlayer(nickname) {
   }
 }
 
-async function loadRemoteProgress(playerId) {
-  if (!playerId || isLocalId(playerId) || ApiService.isMockEnabled()) {
+/**
+ * O servidor não conhece mais este jogador (o banco foi trocado ou
+ * zerado): cria o jogador de novo e envia o progresso deste aparelho,
+ * para a aventura não se perder.
+ */
+async function relinkToServer(nickname) {
+  const state = GameState.get();
+  const player = await ApiService.createPlayer({
+    nickname: nickname || state.nickname,
+    avatar: state.avatar || "ae"
+  });
+
+  if (!player?.id) {
     return;
   }
 
-  try {
-    const progress = await ApiService.getProgress(playerId);
-
-    GameState.applyRemoteProgress(progress);
-    ProgressManager.save();
-    GameMetrics.load();
-  } catch (error) {
-    console.warn("Não foi possível carregar o progresso remoto.", error);
-  }
+  ProgressManager.relinkPlayerId(player.id);
+  await ApiService.saveProgress({ playerId: player.id });
 }
 
 /**
@@ -95,17 +99,23 @@ async function openRemotePlayer(player, nickname) {
   ProgressManager.loadProfile(base);
   GameState.applyRemoteProgress({ ...progress, nickname: remoteNickname });
 
-  const profile = ProgressManager.save();
-
   GameMetrics.load();
+  GameMetrics.applyRemote(progress);
 
-  return profile;
+  return ProgressManager.save();
 }
 
+/**
+ * Perfil deste aparelho com ID do servidor, mas a busca pelo apelido não
+ * achou ninguém lá: o servidor não conhece mais este jogador (banco
+ * trocado ou zerado). Recria o jogador e envia o progresso deste aparelho.
+ */
 async function openLocalProfileOnline(localProfile, nickname) {
   ProgressManager.loadProfile(localProfile);
 
-  await loadRemoteProgress(localProfile.playerId);
+  if (!ApiService.isMockEnabled()) {
+    await relinkToServer(nickname);
+  }
 
   return ProgressManager.findProfileByNickname(nickname) || localProfile;
 }
@@ -210,10 +220,9 @@ export async function restartFromZero(profile) {
   });
 
   try {
-    await ApiService.saveProgress({
-      playerId: profile.playerId,
-      reset: true
-    });
+    // DELETE /players/:id/progress: zera o progresso e os resultados das
+    // fases no servidor (senão o relatório mostraria as fases antigas).
+    await ApiService.resetProgress(profile.playerId);
   } catch (error) {
     console.warn("Não foi possível reiniciar o progresso no servidor.", error);
   }
@@ -246,6 +255,7 @@ export function entrySceneForPhase(phase) {
  */
 export async function beginAdventure(avatarId) {
   const state = GameState.get();
+  const avatarChanged = state.avatar !== avatarId;
 
   GameState.setPlayer({
     nickname: state.nickname || "Explorador",
@@ -256,8 +266,15 @@ export async function beginAdventure(avatarId) {
   ProgressManager.save();
   GameMetrics.load();
 
+  const playerId = GameState.get().playerId;
+
   try {
-    await ApiService.saveProgress({ playerId: GameState.get().playerId });
+    // O avatar é do jogador (aparece no ranking); o resto é progresso.
+    if (avatarChanged) {
+      await ApiService.updatePlayer(playerId, { avatar: avatarId });
+    }
+
+    await ApiService.saveProgress({ playerId });
   } catch (error) {
     console.warn("Não foi possível sincronizar o avatar/progresso.", error);
   }

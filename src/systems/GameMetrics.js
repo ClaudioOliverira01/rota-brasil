@@ -48,6 +48,55 @@ export const GameMetrics = {
         };
     },
 
+    /*
+     * Junta as métricas gerais salvas no servidor (outro aparelho, por
+     * exemplo) com as deste aparelho: vale o início mais antigo e o
+     * maior tempo total.
+     */
+    applyRemote(progress) {
+
+        if (!progress) {
+
+            return;
+        }
+
+        const remoteStart =
+            progress.gameStartedAt
+                ? new Date(progress.gameStartedAt).getTime()
+                : NaN;
+
+        const localStart =
+            metrics.gameStartedAt
+                ? new Date(metrics.gameStartedAt).getTime()
+                : NaN;
+
+        if (
+            Number.isFinite(remoteStart) &&
+            (!Number.isFinite(localStart) || remoteStart < localStart)
+        ) {
+
+            metrics.gameStartedAt =
+                new Date(remoteStart).toISOString();
+        }
+
+        if (
+            progress.gameCompletedAt &&
+            !metrics.gameCompletedAt
+        ) {
+
+            metrics.gameCompletedAt =
+                progress.gameCompletedAt;
+        }
+
+        metrics.totalTimeSeconds =
+            Math.max(
+                Number(metrics.totalTimeSeconds) || 0,
+                Number(progress.totalTimeSeconds) || 0
+            );
+
+        this.save();
+    },
+
     startGame() {
 
         if (!metrics.gameStartedAt) {

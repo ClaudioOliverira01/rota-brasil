@@ -135,7 +135,7 @@ export default function VictoryScreen({
 
             <p className="victory__message">
               {final
-                ? "Você ajudou Aê a completar toda a expedição!"
+                ? `Você ajudou ${avatar.name} a completar toda a expedição!`
                 : "Muito bem! Sua aventura está avançando."}
             </p>
 
