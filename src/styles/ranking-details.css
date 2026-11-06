@@ -1,0 +1,19 @@
+/* Área "Detalhes técnicos" do aviso de ranking sem conexão (para adultos). */
+.notice__details {
+  width: 100%;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.notice__details summary {
+  cursor: pointer;
+  font-weight: 700;
+  text-align: center;
+}
+
+.notice__details p {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}

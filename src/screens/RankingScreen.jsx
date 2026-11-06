@@ -2,9 +2,11 @@ import { useEffect, useRef } from "react";
 
 import Button from "../components/Button.jsx";
 import { useRanking } from "../hooks/useRanking.js";
+import { ApiService } from "../services/ApiService.js";
 import { getAvatar, PHASES } from "../data/gameData.js";
 import { GameState } from "../systems/GameState.js";
 import { AudioManager } from "../systems/AudioManager.js";
+import "../styles/ranking-details.css";
 
 const MEDALS = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
@@ -87,6 +89,12 @@ function RankingPanel({ ranking, onRetry }) {
           <Button variant="light" size="sm" icon="🔄" onClick={onRetry}>
             Tentar de novo
           </Button>
+
+          <details className="notice__details">
+            <summary>Detalhes técnicos</summary>
+            <p>Endereço da API: {ApiService.baseUrl}</p>
+            {ranking.reason ? <p>{ranking.reason}</p> : null}
+          </details>
         </div>
       ) : null}
 

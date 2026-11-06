@@ -1,0 +1,338 @@
+<!-- ARQUIVO: pack/gerar-gif.html  (CRIAR) -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gerador do GIF - Rota Brasil</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #eefaf4; color: #18332c; margin: 0; padding: 24px; text-align: center; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; color: #07543d; }
+  p { margin: 6px auto; max-width: 34rem; }
+  canvas { display: block; margin: 16px auto; border: 4px solid #07543d; border-radius: 16px; background: #fff; }
+  button { font: inherit; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; color: #fff; background: #0e7a52; border: 0; border-radius: 12px; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: wait; }
+  #status { min-height: 1.5rem; font-weight: 700; }
+</style>
+</head>
+<body>
+<h1>Gerador do GIF - Rota Brasil</h1>
+<p>Esta é a prévia animada (400 x 400 px). Clique no botão para gerar e baixar o arquivo <strong>icone-rota-brasil.gif</strong>.</p>
+<canvas id="tela" width="400" height="400" aria-label="Prévia do ícone animado"></canvas>
+<button id="gerar" type="button">Gerar e baixar o GIF</button>
+<p id="status" role="status"></p>
+
+<script>
+/* =========================================================
+   1) DESENHO DA ANIMAÇÃO  (p = volta da animação, de 0 a 1)
+   ========================================================= */
+const SIZE = 400;
+const FRAMES = 36;      // quadros do GIF
+const DELAY_MS = 80;    // tempo de cada quadro (36 x 80 ms = 2,9 s por volta)
+const FONT = "Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif";
+const TAU = Math.PI * 2;
+
+function circle(ctx, x, y, r, fill) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = fill; ctx.fill();
+}
+function roundRect(ctx, x, y, w, h, r, fill) {
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fillStyle = fill; ctx.fill();
+}
+function gradient(ctx, x0, y0, x1, y1, stops) {
+  const g = ctx.createLinearGradient(x0, y0, x1, y1);
+  stops.forEach(([at, color]) => g.addColorStop(at, color));
+  return g;
+}
+const easeOut = u => 1 - (1 - u) * (1 - u);
+
+// Ângulo da agulha (graus): gira, balança e para no Norte.
+function needleAngle(p) {
+  const keys = [[0, 200], [0.3, -40], [0.5, 25], [0.7, -10], [0.85, 0]];
+  if (p >= 0.85) return 0;
+  for (let i = 0; i < keys.length - 1; i += 1) {
+    const [p0, a0] = keys[i];
+    const [p1, a1] = keys[i + 1];
+    if (p >= p0 && p < p1) return a0 + (a1 - a0) * easeOut((p - p0) / (p1 - p0));
+  }
+  return 0;
+}
+
+function drawCloud(ctx, x, y, alpha) {
+  ctx.save(); ctx.translate(x, y); ctx.globalAlpha = alpha;
+  circle(ctx, 22, 30, 17, "#fff");
+  circle(ctx, 48, 20, 23, "#fff");
+  circle(ctx, 76, 30, 18, "#fff");
+  roundRect(ctx, 14, 30, 70, 17, 8, "#fff");
+  ctx.restore();
+}
+
+function drawCompass(ctx, p) {
+  const cx = 200, cy = 235;
+  circle(ctx, cx, cy, 96, "#07543d");
+  circle(ctx, cx, cy, 88, "#fefdf7");
+  circle(ctx, cx, cy, 78, "#0e7a52");
+  circle(ctx, cx, cy, 75, "#e3f9ee");
+
+  ctx.font = `bold 22px ${FONT}`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  [["N", 200, 176, "#c0392b"], ["S", 200, 296, "#1e7a46"],
+   ["L", 268, 236, "#b8860b"], ["O", 132, 236, "#3b66c8"]].forEach(([t, x, y, c]) => {
+    ctx.fillStyle = c; ctx.fillText(t, x, y);
+  });
+
+  ctx.save(); ctx.translate(cx, cy);
+  ctx.rotate((needleAngle(p) * Math.PI) / 180);
+  ctx.beginPath(); ctx.moveTo(0, -50); ctx.lineTo(-10, 0); ctx.lineTo(10, 0); ctx.closePath();
+  ctx.fillStyle = "#e8483a"; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0, 50); ctx.lineTo(-10, 0); ctx.lineTo(10, 0); ctx.closePath();
+  ctx.fillStyle = "#31506b"; ctx.fill();
+  ctx.restore();
+
+  circle(ctx, cx, cy, 13, "#07543d");
+  circle(ctx, cx, cy, 9, "#fff");
+
+  if (p >= 0.7) { // brilho dourado quando a agulha para no Norte
+    ctx.save(); ctx.globalAlpha = Math.min(1, (p - 0.7) / 0.15);
+    ctx.beginPath(); ctx.arc(cx, cy, 100, 0, TAU);
+    ctx.lineWidth = 6; ctx.strokeStyle = "#ffd873"; ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawBird(ctx, p) {
+  const bob = -10 * (0.5 - 0.5 * Math.cos(TAU * 2 * p));
+  const tilt = (2 * Math.sin(TAU * 2 * p) * Math.PI) / 180;
+  ctx.save();
+  ctx.translate(62, 340 + bob); ctx.rotate(tilt); ctx.translate(-62, -340);
+
+  ctx.lineCap = "round"; ctx.strokeStyle = "#ff9e2c"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(48, 350); ctx.lineTo(44, 362);
+  ctx.moveTo(60, 350); ctx.lineTo(60, 362); ctx.stroke();
+
+  ctx.beginPath(); ctx.moveTo(40, 322);
+  ctx.quadraticCurveTo(20, 318, 24, 346); ctx.quadraticCurveTo(44, 344, 46, 330);
+  ctx.closePath(); ctx.fillStyle = "#1e9d5a"; ctx.fill();
+
+  ctx.beginPath(); ctx.ellipse(62, 318, 26, 32, 0, 0, TAU); ctx.fillStyle = "#2fbf71"; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(62, 330, 17, 20, 0, 0, TAU); ctx.fillStyle = "#b9ec7a"; ctx.fill();
+  circle(ctx, 62, 282, 21, "#2fbf71");
+
+  ctx.beginPath(); ctx.moveTo(44, 272); ctx.quadraticCurveTo(62, 250, 80, 272);
+  ctx.closePath(); ctx.fillStyle = "#e8483a"; ctx.fill();
+
+  circle(ctx, 70, 282, 6, "#fff");
+  circle(ctx, 72, 283, 3, "#18332c");
+  ctx.beginPath(); ctx.moveTo(80, 284);
+  ctx.quadraticCurveTo(104, 282, 98, 298); ctx.quadraticCurveTo(88, 298, 80, 292);
+  ctx.closePath(); ctx.fillStyle = "#ffb83e"; ctx.fill();
+  ctx.restore();
+}
+
+function drawTitle(ctx) {
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.lineJoin = "round";
+  ctx.font = `bold 50px ${FONT}`; ctx.lineWidth = 9; ctx.strokeStyle = "#fff";
+  ctx.strokeText("ROTA BRASIL", 200, 62);
+  ctx.fillStyle = "#07543d"; ctx.fillText("ROTA BRASIL", 200, 62);
+  ctx.font = `bold 19px ${FONT}`; ctx.lineWidth = 4;
+  ctx.strokeText("A EXPEDIÇÃO DE AÊ", 200, 100);
+  ctx.fillStyle = "#18332c"; ctx.fillText("A EXPEDIÇÃO DE AÊ", 200, 100);
+}
+
+function drawFrame(ctx, p) {
+  ctx.fillStyle = gradient(ctx, 0, 0, 0, SIZE, [[0, "#7fd6ff"], [0.6, "#b6ebff"], [1, "#e0f8ee"]]);
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  const pulse = 1 + 0.04 * (1 - Math.cos(TAU * p)); // sol "respira"
+  ctx.save(); ctx.translate(335, 70); ctx.scale(pulse, pulse);
+  circle(ctx, 0, 0, 52, "rgba(255,224,130,0.3)");
+  circle(ctx, 0, 0, 40, "rgba(255,224,130,0.4)");
+  const sun = ctx.createRadialGradient(-10, -12, 2, 0, 0, 30);
+  sun.addColorStop(0, "#fff6bd"); sun.addColorStop(0.55, "#ffd873"); sun.addColorStop(1, "#ffbf4d");
+  circle(ctx, 0, 0, 30, sun);
+  ctx.restore();
+
+  const drift = 18 * Math.sin(TAU * p); // nuvens vão e voltam
+  drawCloud(ctx, 18 + drift, 150, 0.95);
+  drawCloud(ctx, 250 - drift, 215, 0.8);
+
+  ctx.beginPath(); ctx.ellipse(60, 440, 190, 170, 0, 0, TAU);
+  ctx.fillStyle = gradient(ctx, 0, 270, 0, 610, [[0, "#c3f2cb"], [1, "#93deaa"]]); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(360, 445, 200, 175, 0, 0, TAU);
+  ctx.fillStyle = gradient(ctx, 0, 270, 0, 620, [[0, "#aeeabd"], [1, "#7fd49b"]]); ctx.fill();
+
+  drawCompass(ctx, p);
+  drawBird(ctx, p);
+  drawTitle(ctx);
+}
+
+/* =========================================================
+   2) CODIFICADOR DE GIF (sem bibliotecas)
+   ========================================================= */
+
+// Reduz as cores a uma paleta de até 256 (corte pela mediana).
+function buildPalette(samples) { // samples: array de [r, g, b]
+  let boxes = [samples];
+  while (boxes.length < 256) {
+    let best = -1, bestRange = 0, bestChannel = 0;
+    boxes.forEach((box, i) => {
+      if (box.length < 2) return;
+      for (let c = 0; c < 3; c += 1) {
+        let lo = 255, hi = 0;
+        for (const px of box) { if (px[c] < lo) lo = px[c]; if (px[c] > hi) hi = px[c]; }
+        if (hi - lo > bestRange) { bestRange = hi - lo; best = i; bestChannel = c; }
+      }
+    });
+    if (best < 0) break;
+    const box = boxes[best].sort((a, b) => a[bestChannel] - b[bestChannel]);
+    const mid = box.length >> 1;
+    boxes.splice(best, 1, box.slice(0, mid), box.slice(mid));
+  }
+  const palette = boxes.map(box => {
+    const sum = [0, 0, 0];
+    for (const px of box) { sum[0] += px[0]; sum[1] += px[1]; sum[2] += px[2]; }
+    return sum.map(v => Math.round(v / box.length));
+  });
+  while (palette.length < 256) palette.push([0, 0, 0]);
+  return palette;
+}
+
+function makeMapper(palette) { // cor RGB -> índice mais próximo da paleta
+  const cache = new Map();
+  return (r, g, b) => {
+    const key = ((r >> 2) << 12) | ((g >> 2) << 6) | (b >> 2);
+    let idx = cache.get(key);
+    if (idx === undefined) {
+      let bestD = Infinity; idx = 0;
+      for (let i = 0; i < palette.length; i += 1) {
+        const dr = palette[i][0] - r, dg = palette[i][1] - g, db = palette[i][2] - b;
+        const d = dr * dr + dg * dg + db * db;
+        if (d < bestD) { bestD = d; idx = i; }
+      }
+      cache.set(key, idx);
+    }
+    return idx;
+  };
+}
+
+// Compressão LZW do GIF (código mínimo de 8 bits).
+function lzwEncode(indices) {
+  const minCode = 8, clear = 1 << minCode, eoi = clear + 1;
+  const out = [];
+  let cur = 0, shift = 0, codeLength = minCode + 1, nextCode = eoi + 1;
+  let table = new Map();
+
+  function emit(code) {
+    cur |= code << shift; shift += codeLength;
+    while (shift >= 8) { out.push(cur & 255); cur >>>= 8; shift -= 8; }
+  }
+
+  emit(clear);
+  let prefix = indices[0];
+  for (let i = 1; i < indices.length; i += 1) {
+    const k = indices[i];
+    const key = (prefix << 8) | k;
+    const found = table.get(key);
+    if (found !== undefined) { prefix = found; continue; }
+    emit(prefix);
+    if (nextCode === 4096) {
+      emit(clear); table = new Map(); nextCode = eoi + 1; codeLength = minCode + 1;
+    } else {
+      if (nextCode >= (1 << codeLength)) codeLength += 1;
+      table.set(key, nextCode); nextCode += 1;
+    }
+    prefix = k;
+  }
+  emit(prefix);
+  if (nextCode >= (1 << codeLength) && nextCode < 4096) codeLength += 1;
+  emit(eoi);
+  if (shift > 0) out.push(cur & 255);
+  return out;
+}
+
+function encodeGif(frames, width, height, palette, delayMs) {
+  const bytes = [];
+  const w16 = n => bytes.push(n & 255, (n >> 8) & 255);
+  const text = s => { for (const ch of s) bytes.push(ch.charCodeAt(0)); };
+
+  text("GIF89a"); w16(width); w16(height);
+  bytes.push(0xf7, 0, 0);                          // paleta global de 256 cores
+  for (const [r, g, b] of palette) bytes.push(r, g, b);
+  bytes.push(0x21, 0xff, 0x0b); text("NETSCAPE2.0");
+  bytes.push(0x03, 0x01, 0x00, 0x00, 0x00);        // repete para sempre
+
+  const delayCs = Math.max(2, Math.round(delayMs / 10));
+  for (const indices of frames) {
+    bytes.push(0x21, 0xf9, 0x04, 0x04); w16(delayCs); bytes.push(0, 0);
+    bytes.push(0x2c); w16(0); w16(0); w16(width); w16(height); bytes.push(0);
+    bytes.push(8);
+    const data = lzwEncode(indices);
+    for (let i = 0; i < data.length; i += 255) {
+      const chunk = data.slice(i, i + 255);
+      bytes.push(chunk.length, ...chunk);
+    }
+    bytes.push(0);
+  }
+  bytes.push(0x3b);
+  return new Uint8Array(bytes);
+}
+
+/* =========================================================
+   3) TELA: prévia + botão
+   ========================================================= */
+const canvas = document.getElementById("tela");
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
+const button = document.getElementById("gerar");
+const status = document.getElementById("status");
+
+const T0 = performance.now();
+function preview(now) {
+  const p = (((now - T0) / (FRAMES * DELAY_MS)) % 1 + 1) % 1;
+  drawFrame(ctx, p);
+  if (!button.disabled) requestAnimationFrame(preview);
+}
+requestAnimationFrame(preview);
+
+async function gerar() {
+  button.disabled = true;
+  status.textContent = "Gerando o GIF... aguarde.";
+  await new Promise(r => setTimeout(r, 50));
+
+  // 1) desenha todos os quadros
+  const rgba = [];
+  for (let i = 0; i < FRAMES; i += 1) {
+    drawFrame(ctx, i / FRAMES);
+    rgba.push(ctx.getImageData(0, 0, SIZE, SIZE).data);
+  }
+
+  // 2) monta uma paleta única (sem cintilar entre quadros)
+  const samples = [];
+  for (const i of [0, 8, 16, 24, 30]) {
+    const d = rgba[i];
+    for (let k = 0; k < d.length; k += 16) samples.push([d[k], d[k + 1], d[k + 2]]);
+  }
+  const palette = buildPalette(samples);
+  const mapper = makeMapper(palette);
+
+  // 3) converte cada quadro para índices da paleta
+  const frames = rgba.map(d => {
+    const idx = new Uint8Array(SIZE * SIZE);
+    for (let k = 0, j = 0; k < d.length; k += 4, j += 1) idx[j] = mapper(d[k], d[k + 1], d[k + 2]);
+    return idx;
+  });
+
+  // 4) codifica e baixa
+  const gif = encodeGif(frames, SIZE, SIZE, palette, DELAY_MS);
+  const url = URL.createObjectURL(new Blob([gif], { type: "image/gif" }));
+  const link = document.createElement("a");
+  link.href = url; link.download = "icone-rota-brasil.gif";
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+  status.textContent = `Pronto! Arquivo icone-rota-brasil.gif (${(gif.length / 1024).toFixed(0)} KB) baixado.`;
+  button.disabled = false;
+  requestAnimationFrame(preview);
+}
+button.addEventListener("click", gerar);
+</script>
+</body>
+</html>

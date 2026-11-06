@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiService } from "../services/ApiService.js";
+import { describeApiError } from "../services/apiUrl.js";
 import { ProgressManager } from "../systems/ProgressManager.js";
 
 const DEFAULT_LIMIT = 8;
@@ -134,7 +135,8 @@ function normalizeStats(data) {
  * se uma das duas chamadas falhar, a outra continua aparecendo.
  *
  * ranking.status: "loading" | "ready" | "offline"
- *   offline = o servidor não respondeu; mostramos os jogadores locais.
+ *   offline = o servidor não respondeu; mostramos os jogadores locais
+ *             (ranking.reason explica o motivo provável).
  * stats.status:   "loading" | "ready" | "local" | "error"
  *   local = o servidor não respondeu; somamos os erros salvos neste aparelho.
  */
@@ -176,7 +178,11 @@ export function useRanking(limit = DEFAULT_LIMIT) {
         console.warn("Ranking indisponível. Usando jogadores deste aparelho.", error);
 
         if (!cancelled) {
-          setRanking({ status: "offline", rows: readLocalRanking(limit) });
+          setRanking({
+            status: "offline",
+            rows: readLocalRanking(limit),
+            reason: describeApiError(error)
+          });
         }
       });
 

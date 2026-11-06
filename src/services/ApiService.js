@@ -1,9 +1,11 @@
 import { triggerDownload } from "./ReportService.js";
 import { buildProgressSnapshot } from "./ProgressSnapshot.js";
+import { resolveApiBaseUrl } from "./apiUrl.js";
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api"
-).replace(/\/$/, "");
+const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL, {
+  isDev: Boolean(import.meta.env.DEV),
+  hostname: typeof window !== "undefined" ? window.location.hostname : ""
+});
 
 const USE_MOCK =
   String(import.meta.env.VITE_USE_MOCK ?? "false") === "true";
